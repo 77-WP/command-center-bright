@@ -122,6 +122,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_banners: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          subtitle_th: string | null
+          title_th: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          subtitle_th?: string | null
+          title_th?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          subtitle_th?: string | null
+          title_th?: string | null
+        }
+        Relationships: []
+      }
       keep_alive: {
         Row: {
           bumped_at: string | null

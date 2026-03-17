@@ -13,6 +13,7 @@ import ProductAnalytics from "@/pages/ProductAnalytics";
 import CustomerCRM from "@/pages/CustomerCRM";
 import CustomerPortfolio from "@/pages/CustomerPortfolio";
 import MenuManager from "@/pages/MenuManager";
+import HeroBannerManager from "@/pages/HeroBannerManager";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
@@ -55,7 +56,7 @@ function AppRoutes() {
       <Route path="/analytics" element={<ProtectedRoute><SalesAnalytics /></ProtectedRoute>} />
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><MenuManager /></ProtectedRoute>} />
-      <Route path="/banners" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/banners" element={<ProtectedRoute><HeroBannerManager /></ProtectedRoute>} />
       <Route path="/upsell" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
