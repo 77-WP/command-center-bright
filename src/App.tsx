@@ -12,6 +12,7 @@ import SalesAnalytics from "@/pages/SalesAnalytics";
 import ProductAnalytics from "@/pages/ProductAnalytics";
 import CustomerCRM from "@/pages/CustomerCRM";
 import CustomerPortfolio from "@/pages/CustomerPortfolio";
+import MenuManager from "@/pages/MenuManager";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
@@ -53,7 +54,7 @@ function AppRoutes() {
       <Route path="/customers/:id" element={<ProtectedRoute><CustomerPortfolio /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><SalesAnalytics /></ProtectedRoute>} />
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
-      <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/menu" element={<ProtectedRoute><MenuManager /></ProtectedRoute>} />
       <Route path="/banners" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/upsell" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
