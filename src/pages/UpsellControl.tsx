@@ -8,7 +8,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, Zap } from "lucide-react";
+import { Save, Zap, ImageIcon } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
+
+type MenuItem = Tables<"menu_items">;
+type Category = Tables<"categories">;
 
 export default function UpsellControl() {
   const queryClient = useQueryClient();
@@ -28,16 +32,29 @@ export default function UpsellControl() {
     },
   });
 
-  // Fetch all option groups
-  const { data: groups = [], isLoading: groupsLoading } = useQuery({
-    queryKey: ["option_groups_upsell"],
+  // Fetch all menu items
+  const { data: menuItems = [], isLoading: itemsLoading } = useQuery({
+    queryKey: ["menu-items-upsell"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("option_groups")
+        .from("menu_items")
         .select("*")
-        .order("group_name_th");
+        .order("display_order");
       if (error) throw error;
-      return data;
+      return data as MenuItem[];
+    },
+  });
+
+  // Fetch categories for grouping
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("display_order");
+      if (error) throw error;
+      return data as Category[];
     },
   });
 
@@ -74,35 +91,43 @@ export default function UpsellControl() {
     onError: () => toast.error("Failed to save title"),
   });
 
-  // Toggle is_upsell_item on a group
-  const toggleGroupUpsell = useMutation({
+  // Toggle is_upsell_item on a menu item
+  const toggleItemUpsell = useMutation({
     mutationFn: async ({ id, val }: { id: string; val: boolean }) => {
       const { error } = await supabase
-        .from("option_groups")
+        .from("menu_items")
         .update({ is_upsell_item: val })
         .eq("id", id);
       if (error) throw error;
     },
     onMutate: async ({ id, val }) => {
-      await queryClient.cancelQueries({ queryKey: ["option_groups_upsell"] });
-      const prev = queryClient.getQueryData(["option_groups_upsell"]);
-      queryClient.setQueryData(["option_groups_upsell"], (old: any[]) =>
-        old?.map((g) => (g.id === id ? { ...g, is_upsell_item: val } : g))
+      await queryClient.cancelQueries({ queryKey: ["menu-items-upsell"] });
+      const prev = queryClient.getQueryData(["menu-items-upsell"]);
+      queryClient.setQueryData(["menu-items-upsell"], (old: MenuItem[] | undefined) =>
+        old?.map((item) => (item.id === id ? { ...item, is_upsell_item: val } : item))
       );
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      queryClient.setQueryData(["option_groups_upsell"], ctx?.prev);
-      toast.error("Failed to update group");
+      queryClient.setQueryData(["menu-items-upsell"], ctx?.prev);
+      toast.error("Failed to update item");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["option_groups_upsell"] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["menu-items-upsell"] }),
     onSuccess: () => toast.success("Upsell item updated"),
   });
 
   const currentTitle = titleDraft ?? (settings as any)?.upsell_title ?? "";
   const isUpsellActive = (settings as any)?.is_upsell_active ?? false;
 
-  if (settingsLoading || groupsLoading) {
+  // Group menu items by category
+  const catMap = new Map(categories.map((c) => [c.id, c]));
+  const grouped = categories.map((cat) => ({
+    category: cat,
+    items: menuItems.filter((mi) => mi.category_id === cat.id),
+  }));
+  const uncategorized = menuItems.filter((mi) => !mi.category_id);
+
+  if (settingsLoading || itemsLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -157,60 +182,96 @@ export default function UpsellControl() {
         </CardContent>
       </Card>
 
-      {/* Upsell Targets */}
-      <div className="space-y-4">
+      {/* Upsell Targets — Menu Items grouped by category */}
+      <div className="space-y-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Select Upsell Items</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Toggle option groups to include them in the pre-checkout upsell modal.
+            Toggle menu items to include them in the pre-checkout upsell modal.
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((group) => (
-            <Card
-              key={group.id}
-              className={`transition-colors ${
-                group.is_upsell_item
-                  ? "border-primary/50 bg-primary/5"
-                  : ""
-              }`}
-            >
-              <CardContent className="p-4 flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Zap
-                      className={`h-4 w-4 shrink-0 ${
-                        group.is_upsell_item
-                          ? "text-primary"
-                          : "text-muted-foreground/40"
-                      }`}
-                    />
-                    <span className="font-medium text-sm truncate text-foreground">
-                      {group.group_name_th}
-                    </span>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {group.selection_type}
-                  </Badge>
-                </div>
-                <Switch
-                  checked={group.is_upsell_item ?? false}
-                  onCheckedChange={(val) =>
-                    toggleGroupUpsell.mutate({ id: group.id, val })
-                  }
-                />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {grouped.map(({ category, items }) =>
+          items.length > 0 ? (
+            <div key={category.id} className="space-y-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                {category.name_th} ({category.name_en})
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((item) => (
+                  <UpsellItemCard
+                    key={item.id}
+                    item={item}
+                    onToggle={(val) => toggleItemUpsell.mutate({ id: item.id, val })}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null
+        )}
 
-        {groups.length === 0 && (
+        {uncategorized.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Uncategorized
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {uncategorized.map((item) => (
+                <UpsellItemCard
+                  key={item.id}
+                  item={item}
+                  onToggle={(val) => toggleItemUpsell.mutate({ id: item.id, val })}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {menuItems.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No option groups found. Create some in the Menu Manager first.
+            No menu items found. Create some in the Menu Manager first.
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+function UpsellItemCard({ item, onToggle }: { item: Tables<"menu_items">; onToggle: (val: boolean) => void }) {
+  return (
+    <Card
+      className={`transition-colors ${
+        item.is_upsell_item ? "border-primary/50 bg-primary/5" : ""
+      }`}
+    >
+      <CardContent className="p-0 flex items-stretch">
+        {/* Thumbnail */}
+        <div className="w-20 h-20 shrink-0 bg-muted rounded-l-lg overflow-hidden">
+          {item.image_url ? (
+            <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+            </div>
+          )}
+        </div>
+        {/* Info + toggle */}
+        <div className="flex-1 p-3 flex items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm font-medium text-foreground truncate">{item.name_th}</p>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-[10px]">฿{Number(item.base_price).toFixed(0)}</Badge>
+              {item.is_upsell_item && (
+                <Zap className="h-3.5 w-3.5 text-primary" />
+              )}
+            </div>
+          </div>
+          <Switch
+            checked={item.is_upsell_item ?? false}
+            onCheckedChange={onToggle}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -225,6 +225,7 @@ export type Database = {
           is_active: boolean
           is_best_seller: boolean | null
           is_hero_in_category: boolean | null
+          is_upsell_item: boolean | null
           name_en: string
           name_th: string
         }
@@ -240,6 +241,7 @@ export type Database = {
           is_active?: boolean
           is_best_seller?: boolean | null
           is_hero_in_category?: boolean | null
+          is_upsell_item?: boolean | null
           name_en: string
           name_th: string
         }
@@ -255,6 +257,7 @@ export type Database = {
           is_active?: boolean
           is_best_seller?: boolean | null
           is_hero_in_category?: boolean | null
+          is_upsell_item?: boolean | null
           name_en?: string
           name_th?: string
         }
