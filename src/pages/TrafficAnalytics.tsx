@@ -203,7 +203,12 @@ export default function TrafficAnalytics() {
 
       {/* UTM Link Builder */}
       <div className="mb-6">
-        <UTMLinkBuilder />
+        <UTMLinkBuilder onLinkSaved={() => queryClient.invalidateQueries({ queryKey: ["marketing-links"] })} />
+      </div>
+
+      {/* Active Campaign Links Registry */}
+      <div className="mb-6">
+        <ActiveCampaignLinks />
       </div>
 
       {/* Campaign Performance Matrix */}
