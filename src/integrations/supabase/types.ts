@@ -182,6 +182,39 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_links: {
+        Row: {
+          base_url: string
+          campaign: string
+          created_at: string | null
+          generated_url: string
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          source: string
+        }
+        Insert: {
+          base_url: string
+          campaign: string
+          created_at?: string | null
+          generated_url: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          source: string
+        }
+        Update: {
+          base_url?: string
+          campaign?: string
+          created_at?: string | null
+          generated_url?: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       menu_item_option_groups: {
         Row: {
           menu_item_id: string
