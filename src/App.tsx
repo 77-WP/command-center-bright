@@ -44,6 +44,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><LiveOrders /></ProtectedRoute>} />
+      <Route path="/orders/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
