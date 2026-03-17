@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
+  PieChart,
   UtensilsCrossed,
   ImageIcon,
   TrendingUp,
