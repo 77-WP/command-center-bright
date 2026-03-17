@@ -280,6 +280,10 @@ export default function LiveOrders() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
+        onStatusChange={() => {
+          fetchOrders();
+          setSelectedOrder(null);
+        }}
       />
     </div>
   );
