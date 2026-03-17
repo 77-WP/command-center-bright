@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Pencil, ImageIcon } from "lucide-react";
+import { Pencil, ImageIcon, Plus } from "lucide-react";
 import { EditMenuModal } from "@/components/menu/EditMenuModal";
+import { AddCategoryModal } from "@/components/menu/AddCategoryModal";
+import { AddMenuItemModal } from "@/components/menu/AddMenuItemModal";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MenuItem = Tables<"menu_items">;
@@ -14,6 +16,8 @@ type Category = Tables<"categories">;
 export default function MenuManager() {
   const queryClient = useQueryClient();
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [addItemTarget, setAddItemTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -70,22 +74,26 @@ export default function MenuManager() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Menu Manager</h1>
-        <p className="text-sm text-muted-foreground mt-1">Organize and manage your menu items by category.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Menu Manager</h1>
+          <p className="text-sm text-muted-foreground mt-1">Organize and manage your menu items by category.</p>
+        </div>
+        <Button onClick={() => setShowAddCategory(true)} size="sm" variant="outline" className="gap-1.5">
+          <Plus className="h-4 w-4" /> New Category
+        </Button>
       </div>
 
-      {grouped.map(({ category, items }) =>
-        items.length > 0 ? (
-          <CategorySection
-            key={category.id}
-            title={`${category.name_th} (${category.name_en})`}
-            items={items}
-            onToggle={(id, field, value) => toggleMutation.mutate({ id, field, value })}
-            onEdit={setEditingItem}
-          />
-        ) : null
-      )}
+      {grouped.map(({ category, items }) => (
+        <CategorySection
+          key={category.id}
+          title={`${category.name_th} (${category.name_en})`}
+          items={items}
+          onToggle={(id, field, value) => toggleMutation.mutate({ id, field, value })}
+          onEdit={setEditingItem}
+          onAddItem={() => setAddItemTarget({ id: category.id, name: category.name_th })}
+        />
+      ))}
 
       {uncategorized.length > 0 && (
         <CategorySection
@@ -101,23 +109,36 @@ export default function MenuManager() {
       )}
 
       <EditMenuModal item={editingItem} onClose={() => setEditingItem(null)} />
+      <AddCategoryModal open={showAddCategory} onClose={() => setShowAddCategory(false)} />
+      <AddMenuItemModal
+        open={!!addItemTarget}
+        categoryId={addItemTarget?.id ?? null}
+        categoryName={addItemTarget?.name}
+        onClose={() => setAddItemTarget(null)}
+      />
     </div>
   );
 }
 
 /* ---------- Sub-component ---------- */
 function CategorySection({
-  title, items, onToggle, onEdit,
+  title, items, onToggle, onEdit, onAddItem,
 }: {
   title: string;
-  items: MenuItem[];
+  items: Tables<"menu_items">[];
   onToggle: (id: string, field: "is_active" | "is_best_seller", value: boolean) => void;
-  onEdit: (item: MenuItem) => void;
+  onEdit: (item: Tables<"menu_items">) => void;
+  onAddItem?: () => void;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
-      <div className="px-4 py-3 bg-muted/50 border-b border-border">
+      <div className="px-4 py-3 bg-muted/50 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {onAddItem && (
+          <Button variant="ghost" size="sm" onClick={onAddItem} className="gap-1 text-xs h-7">
+            <Plus className="h-3.5 w-3.5" /> Add Item
+          </Button>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -160,6 +181,11 @@ function CategorySection({
                 </td>
               </tr>
             ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center text-muted-foreground py-6 text-xs">No items in this category.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
