@@ -18,17 +18,23 @@ export type Database = {
         Row: {
           id: number
           is_maintenance_mode: boolean | null
+          is_upsell_active: boolean | null
           maintenance_message: string | null
+          upsell_title: string | null
         }
         Insert: {
           id?: number
           is_maintenance_mode?: boolean | null
+          is_upsell_active?: boolean | null
           maintenance_message?: string | null
+          upsell_title?: string | null
         }
         Update: {
           id?: number
           is_maintenance_mode?: boolean | null
+          is_upsell_active?: boolean | null
           maintenance_message?: string | null
+          upsell_title?: string | null
         }
         Relationships: []
       }
@@ -267,18 +273,21 @@ export type Database = {
           group_name_en: string
           group_name_th: string
           id: string
+          is_upsell_item: boolean | null
           selection_type: string
         }
         Insert: {
           group_name_en: string
           group_name_th: string
           id?: string
+          is_upsell_item?: boolean | null
           selection_type: string
         }
         Update: {
           group_name_en?: string
           group_name_th?: string
           id?: string
+          is_upsell_item?: boolean | null
           selection_type?: string
         }
         Relationships: []
