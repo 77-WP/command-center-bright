@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Clock, Phone, User, Package, Hash } from "lucide-react";
+import { Clock, Phone, User, Package, Hash, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface OrderWithCustomer {
   id: string;
@@ -97,6 +99,7 @@ export default function LiveOrders() {
   const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchOrders = async () => {
     const { data, error } = await supabase
@@ -154,9 +157,15 @@ export default function LiveOrders() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Live Orders</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Real-time order tracking board</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Live Orders</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Real-time order tracking board</p>
+        </div>
+        <Button onClick={() => navigate("/orders/new")} className="font-semibold gap-2">
+          <Plus className="h-4 w-4" />
+          New Order
+        </Button>
       </div>
 
       <div className="flex gap-6 overflow-x-auto">
