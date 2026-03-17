@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import Login from "@/pages/Login";
 import LiveOrders from "@/pages/LiveOrders";
 import NewOrder from "@/pages/NewOrder";
+import SalesAnalytics from "@/pages/SalesAnalytics";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
