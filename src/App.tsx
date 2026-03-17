@@ -49,7 +49,8 @@ function AppRoutes() {
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><LiveOrders /></ProtectedRoute>} />
       <Route path="/orders/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute><CustomerCRM /></ProtectedRoute>} />
+      <Route path="/customers/:id" element={<ProtectedRoute><CustomerPortfolio /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><SalesAnalytics /></ProtectedRoute>} />
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
