@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Login from "@/pages/Login";
 import LiveOrders from "@/pages/LiveOrders";
+import NewOrder from "@/pages/NewOrder";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
@@ -43,6 +44,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><LiveOrders /></ProtectedRoute>} />
+      <Route path="/orders/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
