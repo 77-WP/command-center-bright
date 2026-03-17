@@ -27,6 +27,7 @@ const PIE_COLORS = [
 ];
 
 export default function TrafficAnalytics() {
+  const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfDay(new Date()),
     to: endOfDay(new Date()),
