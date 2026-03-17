@@ -176,7 +176,7 @@ export default function NewOrder() {
     }));
 
     const { error } = await supabase.from("orders").insert({
-      items: itemsPayload,
+      items: itemsPayload as unknown as import("@/integrations/supabase/types").Json,
       grand_total: grandTotal,
       subtotal: grandTotal,
       source: source,
