@@ -12,7 +12,9 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
 import UTMLinkBuilder from "@/components/traffic/UTMLinkBuilder";
+import ActiveCampaignLinks from "@/components/traffic/ActiveCampaignLinks";
 import CampaignPerformanceMatrix from "@/components/traffic/CampaignPerformanceMatrix";
 
 const PIE_COLORS = [
