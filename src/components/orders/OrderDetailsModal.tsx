@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Clock, Phone, User, Hash, CreditCard, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Phone, User, Hash, CreditCard, MapPin, ChefHat, CheckCircle2, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderItem {
   name_th?: string;
@@ -56,19 +60,48 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+const STATUS_FLOW: Record<string, { next: string; label: string; icon: string }> = {
+  pending_line: { next: "pending", label: "✅ Customer Paid (Move to Pending)", icon: "check" },
+  pending: { next: "preparing", label: "👨‍🍳 Start Cooking (Move to Preparing)", icon: "chef" },
+  preparing: { next: "completed", label: "🍱 Order Ready (Complete)", icon: "done" },
+};
+
 export function OrderDetailsModal({
   order,
   open,
   onOpenChange,
+  onStatusChange,
 }: {
   order: OrderWithCustomer | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStatusChange?: () => void;
 }) {
+  const [updating, setUpdating] = useState(false);
+  const { toast } = useToast();
+
   if (!order) return null;
 
   const items = parseItems(order.items);
   const createdDate = order.created_at ? new Date(order.created_at) : null;
+  const nextStep = STATUS_FLOW[order.status];
+
+  const handleAdvanceStatus = async () => {
+    if (!nextStep) return;
+    setUpdating(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: nextStep.next })
+      .eq("id", order.id);
+    setUpdating(false);
+
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Status updated ✅", description: `Order #${order.order_number} → ${statusLabels[nextStep.next]}` });
+    onStatusChange?.();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,6 +114,19 @@ export function OrderDetailsModal({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Action Button — Top */}
+          {nextStep && (
+            <Button
+              onClick={handleAdvanceStatus}
+              disabled={updating}
+              className="w-full font-semibold text-sm h-11"
+              size="lg"
+            >
+              {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {nextStep.label}
+            </Button>
+          )}
+
           {/* Status & Meta */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="capitalize">
@@ -99,11 +145,13 @@ export function OrderDetailsModal({
           <div className="bg-muted rounded-lg p-3 space-y-1.5 text-sm">
             <div className="flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{order.customers?.nickname || "Walk-in"}</span>
+              <span className="font-medium">
+                {order.customers?.nickname || order.internal_notes || "Walk-in"}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{order.customers?.phone_number || "—"}</span>
+              <span>{order.customers?.phone_number || (order.source === "web_direct" ? "LINE pending" : "—")}</span>
             </div>
             {createdDate && (
               <div className="flex items-center gap-2">

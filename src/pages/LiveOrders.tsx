@@ -71,7 +71,7 @@ function OrderCard({
   onClick: () => void;
 }) {
   const elapsed = useElapsedMinutes(order.created_at);
-  const overdue = isGhost && elapsed >= 10;
+  const overdue = isGhost && elapsed >= 3;
 
   return (
     <div
@@ -95,11 +95,11 @@ function OrderCard({
       <div className="space-y-1.5 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <User className="h-3.5 w-3.5" />
-          <span>{order.customers?.nickname || "Walk-in"}</span>
+          <span>{order.customers?.nickname || order.internal_notes || "Walk-in"}</span>
         </div>
         <div className={`flex items-center gap-2 ${overdue ? "text-kanban-ghost font-semibold" : ""}`}>
           <Phone className={`h-3.5 w-3.5 ${overdue ? "text-kanban-ghost" : ""}`} />
-          <span>{order.customers?.phone_number || "—"}</span>
+          <span>{order.customers?.phone_number || (order.source === "web_direct" ? "LINE pending" : "—")}</span>
         </div>
         {order.pickup_time && (
           <div className="flex items-center gap-2">
@@ -280,6 +280,10 @@ export default function LiveOrders() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
+        onStatusChange={() => {
+          fetchOrders();
+          setSelectedOrder(null);
+        }}
       />
     </div>
   );
