@@ -54,7 +54,7 @@ function AppRoutes() {
       <Route path="/customers/:id" element={<ProtectedRoute><CustomerPortfolio /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><SalesAnalytics /></ProtectedRoute>} />
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
-      <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/menu" element={<ProtectedRoute><MenuManager /></ProtectedRoute>} />
       <Route path="/banners" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="/upsell" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
