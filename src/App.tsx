@@ -14,7 +14,7 @@ import CustomerCRM from "@/pages/CustomerCRM";
 import CustomerPortfolio from "@/pages/CustomerPortfolio";
 import MenuManager from "@/pages/MenuManager";
 import HeroBannerManager from "@/pages/HeroBannerManager";
-import Placeholder from "@/pages/Placeholder";
+import UpsellControl from "@/pages/UpsellControl";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,7 +57,7 @@ function AppRoutes() {
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><MenuManager /></ProtectedRoute>} />
       <Route path="/banners" element={<ProtectedRoute><HeroBannerManager /></ProtectedRoute>} />
-      <Route path="/upsell" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/upsell" element={<ProtectedRoute><UpsellControl /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
