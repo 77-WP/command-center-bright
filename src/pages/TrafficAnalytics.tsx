@@ -14,8 +14,7 @@ import {
 } from "recharts";
 import { useQueryClient } from "@tanstack/react-query";
 import UTMLinkBuilder from "@/components/traffic/UTMLinkBuilder";
-import ActiveCampaignLinks from "@/components/traffic/ActiveCampaignLinks";
-import CampaignPerformanceMatrix from "@/components/traffic/CampaignPerformanceMatrix";
+import MasterTrackingLinks from "@/components/traffic/MasterTrackingLinks";
 
 const PIE_COLORS = [
   "hsl(16, 100%, 66%)",
