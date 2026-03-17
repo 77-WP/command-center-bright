@@ -12,7 +12,9 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
 import UTMLinkBuilder from "@/components/traffic/UTMLinkBuilder";
+import ActiveCampaignLinks from "@/components/traffic/ActiveCampaignLinks";
 import CampaignPerformanceMatrix from "@/components/traffic/CampaignPerformanceMatrix";
 
 const PIE_COLORS = [
@@ -25,6 +27,7 @@ const PIE_COLORS = [
 ];
 
 export default function TrafficAnalytics() {
+  const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfDay(new Date()),
     to: endOfDay(new Date()),
@@ -200,7 +203,12 @@ export default function TrafficAnalytics() {
 
       {/* UTM Link Builder */}
       <div className="mb-6">
-        <UTMLinkBuilder />
+        <UTMLinkBuilder onLinkSaved={() => queryClient.invalidateQueries({ queryKey: ["marketing-links"] })} />
+      </div>
+
+      {/* Active Campaign Links Registry */}
+      <div className="mb-6">
+        <ActiveCampaignLinks />
       </div>
 
       {/* Campaign Performance Matrix */}
