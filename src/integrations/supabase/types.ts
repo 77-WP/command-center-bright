@@ -300,6 +300,7 @@ export type Database = {
           internal_notes: string | null
           items: Json
           order_date: string | null
+          order_number: number
           payment_method: string | null
           pickup_time: string | null
           platform_fee: number | null
@@ -318,6 +319,7 @@ export type Database = {
           internal_notes?: string | null
           items: Json
           order_date?: string | null
+          order_number?: number
           payment_method?: string | null
           pickup_time?: string | null
           platform_fee?: number | null
@@ -336,6 +338,7 @@ export type Database = {
           internal_notes?: string | null
           items?: Json
           order_date?: string | null
+          order_number?: number
           payment_method?: string | null
           pickup_time?: string | null
           platform_fee?: number | null
