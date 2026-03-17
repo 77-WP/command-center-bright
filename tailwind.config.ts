@@ -66,6 +66,12 @@ export default {
         kanban: {
           pending: "hsl(var(--kanban-pending))",
           preparing: "hsl(var(--kanban-preparing))",
+          ghost: "hsl(var(--kanban-ghost))",
+          "ghost-bg": "hsl(var(--kanban-ghost-bg))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
       },
       borderRadius: {

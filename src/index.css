@@ -50,7 +50,11 @@
     --login-foreground: 210 40% 98%;
     --kanban-pending: 38 92% 50%;
     --kanban-preparing: 199 89% 48%;
+    --kanban-ghost: 0 84% 60%;
+    --kanban-ghost-bg: 0 84% 97%;
     --brand-orange: 16 100% 66%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
   }
 }
 
