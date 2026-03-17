@@ -103,6 +103,7 @@ export type Database = {
       }
       events: {
         Row: {
+          campaign: string | null
           created_at: string | null
           event_data: Json | null
           event_name: string
@@ -111,6 +112,7 @@ export type Database = {
           source: string | null
         }
         Insert: {
+          campaign?: string | null
           created_at?: string | null
           event_data?: Json | null
           event_name: string
@@ -119,6 +121,7 @@ export type Database = {
           source?: string | null
         }
         Update: {
+          campaign?: string | null
           created_at?: string | null
           event_data?: Json | null
           event_name?: string
@@ -335,6 +338,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          campaign: string | null
           created_at: string | null
           customer_id: string | null
           delivery_fee: number | null
@@ -354,6 +358,7 @@ export type Database = {
           subtotal: number | null
         }
         Insert: {
+          campaign?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_fee?: number | null
@@ -373,6 +378,7 @@ export type Database = {
           subtotal?: number | null
         }
         Update: {
+          campaign?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_fee?: number | null

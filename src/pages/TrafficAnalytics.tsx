@@ -2,18 +2,18 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, endOfDay } from "date-fns";
-import { CalendarIcon, Eye, ShoppingCart, Ghost, TrendingUp, Link2, Copy, Check } from "lucide-react";
+import { CalendarIcon, Eye, ShoppingCart, Ghost, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import UTMLinkBuilder from "@/components/traffic/UTMLinkBuilder";
+import CampaignPerformanceMatrix from "@/components/traffic/CampaignPerformanceMatrix";
 
 const PIE_COLORS = [
   "hsl(16, 100%, 66%)",
@@ -38,7 +38,7 @@ export default function TrafficAnalytics() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("event_name, session_id, source, created_at")
+        .select("event_name, session_id, source, campaign, created_at")
         .gte("created_at", fromISO)
         .lte("created_at", toISO);
       return data || [];
@@ -50,7 +50,7 @@ export default function TrafficAnalytics() {
     queryFn: async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, status, source, created_at")
+        .select("id, status, source, campaign, grand_total, created_at")
         .gte("created_at", fromISO)
         .lte("created_at", toISO);
       return data || [];
@@ -67,8 +67,7 @@ export default function TrafficAnalytics() {
     ).length;
     const completedOrders = orders.filter((o) => o.status === "completed").length;
     const conversionRate = uniqueVisitors > 0 ? ((completedOrders / uniqueVisitors) * 100).toFixed(1) : "0.0";
-
-    return { uniqueVisitors, cartsCreated, ghostOrders, conversionRate, completedOrders };
+    return { uniqueVisitors, cartsCreated, ghostOrders, conversionRate };
   }, [events, orders]);
 
   const sourceData = useMemo(() => {
@@ -134,9 +133,7 @@ export default function TrafficAnalytics() {
               <Eye className="h-3.5 w-3.5" /> Total Visitors
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{kpis.uniqueVisitors.toLocaleString()}</p>
-          </CardContent>
+          <CardContent><p className="text-2xl font-bold">{kpis.uniqueVisitors.toLocaleString()}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
@@ -144,9 +141,7 @@ export default function TrafficAnalytics() {
               <ShoppingCart className="h-3.5 w-3.5" /> Carts Created
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{kpis.cartsCreated.toLocaleString()}</p>
-          </CardContent>
+          <CardContent><p className="text-2xl font-bold">{kpis.cartsCreated.toLocaleString()}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
@@ -154,9 +149,7 @@ export default function TrafficAnalytics() {
               <Ghost className="h-3.5 w-3.5" /> Ghost Orders
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-destructive">{kpis.ghostOrders}</p>
-          </CardContent>
+          <CardContent><p className="text-2xl font-bold text-destructive">{kpis.ghostOrders}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
@@ -164,18 +157,14 @@ export default function TrafficAnalytics() {
               <TrendingUp className="h-3.5 w-3.5" /> Conversion Rate
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{kpis.conversionRate}%</p>
-          </CardContent>
+          <CardContent><p className="text-2xl font-bold">{kpis.conversionRate}%</p></CardContent>
         </Card>
       </div>
 
-      {/* Charts + UTM Builder */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Traffic by Source</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-semibold">Traffic by Source</CardTitle></CardHeader>
           <CardContent>
             {sourceData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No data for this period</p>
@@ -193,11 +182,8 @@ export default function TrafficAnalytics() {
             )}
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Conversion Funnel</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-semibold">Conversion Funnel</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={funnelData} layout="vertical">
@@ -213,71 +199,12 @@ export default function TrafficAnalytics() {
       </div>
 
       {/* UTM Link Builder */}
-      <UTMLinkBuilder />
+      <div className="mb-6">
+        <UTMLinkBuilder />
+      </div>
+
+      {/* Campaign Performance Matrix */}
+      <CampaignPerformanceMatrix events={events} orders={orders} />
     </div>
-  );
-}
-
-/* ---------- UTM Link Builder ---------- */
-function UTMLinkBuilder() {
-  const [baseUrl, setBaseUrl] = useState("https://yoursite.com");
-  const [source, setSource] = useState("");
-  const [campaign, setCampaign] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  const generatedUrl = useMemo(() => {
-    try {
-      const url = new URL(baseUrl);
-      if (source) url.searchParams.set("source", source);
-      if (campaign) url.searchParams.set("campaign", campaign);
-      return url.toString();
-    } catch {
-      return "";
-    }
-  }, [baseUrl, source, campaign]);
-
-  const handleCopy = async () => {
-    if (!generatedUrl) return;
-    await navigator.clipboard.writeText(generatedUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Link2 className="h-4 w-4" /> UTM Link Builder
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Base URL</Label>
-            <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://yoursite.com" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Source</Label>
-            <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. facebook, tiktok, line_oa" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Campaign</Label>
-            <Input value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="e.g. promo_march" />
-          </div>
-        </div>
-
-        {generatedUrl && (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-muted rounded-md px-3 py-2 text-xs font-mono text-foreground break-all border border-border">
-              {generatedUrl}
-            </div>
-            <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1.5 shrink-0">
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copied!" : "Copy"}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
