@@ -6,6 +6,7 @@ import {
   UtensilsCrossed,
   ImageIcon,
   TrendingUp,
+  Activity,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
