@@ -14,8 +14,7 @@ import {
 } from "recharts";
 import { useQueryClient } from "@tanstack/react-query";
 import UTMLinkBuilder from "@/components/traffic/UTMLinkBuilder";
-import ActiveCampaignLinks from "@/components/traffic/ActiveCampaignLinks";
-import CampaignPerformanceMatrix from "@/components/traffic/CampaignPerformanceMatrix";
+import MasterTrackingLinks from "@/components/traffic/MasterTrackingLinks";
 
 const PIE_COLORS = [
   "hsl(16, 100%, 66%)",
@@ -206,13 +205,8 @@ export default function TrafficAnalytics() {
         <UTMLinkBuilder onLinkSaved={() => queryClient.invalidateQueries({ queryKey: ["marketing-links"] })} />
       </div>
 
-      {/* Active Campaign Links Registry */}
-      <div className="mb-6">
-        <ActiveCampaignLinks />
-      </div>
-
-      {/* Campaign Performance Matrix */}
-      <CampaignPerformanceMatrix events={events} orders={orders} />
+      {/* Master Tracking Links */}
+      <MasterTrackingLinks events={events} orders={orders} />
     </div>
   );
 }
