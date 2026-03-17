@@ -57,7 +57,7 @@ function AppRoutes() {
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><MenuManager /></ProtectedRoute>} />
       <Route path="/banners" element={<ProtectedRoute><HeroBannerManager /></ProtectedRoute>} />
-      <Route path="/upsell" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/upsell" element={<ProtectedRoute><UpsellControl /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
