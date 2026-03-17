@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
+  PieChart,
   UtensilsCrossed,
   ImageIcon,
   TrendingUp,
@@ -37,6 +38,7 @@ const navGroups = [
     items: [
       { title: "Customer CRM", url: "/customers", icon: Users },
       { title: "Sales Analytics", url: "/analytics", icon: BarChart3 },
+      { title: "Product Analytics", url: "/product-analytics", icon: PieChart },
     ],
   },
   {
