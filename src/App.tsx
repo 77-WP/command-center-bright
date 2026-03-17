@@ -15,6 +15,7 @@ import CustomerPortfolio from "@/pages/CustomerPortfolio";
 import MenuManager from "@/pages/MenuManager";
 import HeroBannerManager from "@/pages/HeroBannerManager";
 import UpsellControl from "@/pages/UpsellControl";
+import TrafficAnalytics from "@/pages/TrafficAnalytics";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
