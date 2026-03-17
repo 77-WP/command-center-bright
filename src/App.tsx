@@ -10,6 +10,8 @@ import LiveOrders from "@/pages/LiveOrders";
 import NewOrder from "@/pages/NewOrder";
 import SalesAnalytics from "@/pages/SalesAnalytics";
 import ProductAnalytics from "@/pages/ProductAnalytics";
+import CustomerCRM from "@/pages/CustomerCRM";
+import CustomerPortfolio from "@/pages/CustomerPortfolio";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
@@ -47,7 +49,8 @@ function AppRoutes() {
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><LiveOrders /></ProtectedRoute>} />
       <Route path="/orders/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute><CustomerCRM /></ProtectedRoute>} />
+      <Route path="/customers/:id" element={<ProtectedRoute><CustomerPortfolio /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><SalesAnalytics /></ProtectedRoute>} />
       <Route path="/product-analytics" element={<ProtectedRoute><ProductAnalytics /></ProtectedRoute>} />
       <Route path="/menu" element={<ProtectedRoute><Placeholder /></ProtectedRoute>} />
