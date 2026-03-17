@@ -323,13 +323,23 @@ export default function NewOrder() {
               </SelectContent>
             </Select>
 
+            <Select value={orderStatus} onValueChange={setOrderStatus}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Order Status *" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending" className="text-xs">🔥 Send to Kitchen (Pending)</SelectItem>
+                <SelectItem value="completed" className="text-xs">✅ Log Past Sale (Completed)</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button
               onClick={handleSave}
               disabled={saving || cart.length === 0}
               className="w-full font-bold gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save Order
+              {orderStatus === "pending" ? "Send to Kitchen" : "Save Order"}
             </Button>
           </div>
         </div>
