@@ -183,7 +183,7 @@ export default function NewOrder() {
       source: source,
       payment_method: paymentMethod,
       fulfillment_type: FULFILLMENT_MAP[source] || "dine-in",
-      status: "completed",
+      status: orderStatus,
     });
 
     setSaving(false);
