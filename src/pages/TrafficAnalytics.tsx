@@ -205,7 +205,7 @@ export default function TrafficAnalytics() {
         <UTMLinkBuilder onLinkSaved={() => queryClient.invalidateQueries({ queryKey: ["marketing-links"] })} />
       </div>
 
-      {/* Master Tracking Links */}
+      {/* Master Tracking Links — consolidated view */}
       <MasterTrackingLinks events={events} orders={orders} />
     </div>
   );
