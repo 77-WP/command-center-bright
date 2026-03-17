@@ -9,6 +9,7 @@ import Login from "@/pages/Login";
 import LiveOrders from "@/pages/LiveOrders";
 import NewOrder from "@/pages/NewOrder";
 import SalesAnalytics from "@/pages/SalesAnalytics";
+import ProductAnalytics from "@/pages/ProductAnalytics";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
