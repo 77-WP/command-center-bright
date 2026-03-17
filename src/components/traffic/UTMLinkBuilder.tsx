@@ -1,15 +1,22 @@
 import { useState, useMemo } from "react";
-import { Link2, Copy, Check } from "lucide-react";
+import { Link2, Copy, Check, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-export default function UTMLinkBuilder() {
+interface Props {
+  onLinkSaved?: () => void;
+}
+
+export default function UTMLinkBuilder({ onLinkSaved }: Props) {
   const [baseUrl, setBaseUrl] = useState("https://yoursite.com");
   const [source, setSource] = useState("");
   const [campaign, setCampaign] = useState("");
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const generatedUrl = useMemo(() => {
     try {
@@ -27,6 +34,32 @@ export default function UTMLinkBuilder() {
     await navigator.clipboard.writeText(generatedUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveAndCopy = async () => {
+    if (!generatedUrl || !source || !campaign) {
+      toast({ title: "Missing fields", description: "Please fill in Source and Campaign", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("marketing_links").insert({
+        base_url: baseUrl,
+        source,
+        campaign,
+        generated_url: generatedUrl,
+      });
+      if (error) throw error;
+      await navigator.clipboard.writeText(generatedUrl);
+      toast({ title: "✅ Link saved & copied!", description: `${source} / ${campaign}` });
+      setSource("");
+      setCampaign("");
+      onLinkSaved?.();
+    } catch (err: any) {
+      toast({ title: "Error saving link", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -60,6 +93,10 @@ export default function UTMLinkBuilder() {
             <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1.5 shrink-0">
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy"}
+            </Button>
+            <Button size="sm" onClick={handleSaveAndCopy} disabled={saving || !source || !campaign} className="gap-1.5 shrink-0">
+              <Save className="h-3.5 w-3.5" />
+              {saving ? "Saving..." : "Save & Copy"}
             </Button>
           </div>
         )}
