@@ -12,6 +12,7 @@ import SalesAnalytics from "@/pages/SalesAnalytics";
 import ProductAnalytics from "@/pages/ProductAnalytics";
 import CustomerCRM from "@/pages/CustomerCRM";
 import CustomerPortfolio from "@/pages/CustomerPortfolio";
+import MenuManager from "@/pages/MenuManager";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/NotFound";
 
