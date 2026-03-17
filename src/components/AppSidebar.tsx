@@ -40,6 +40,7 @@ const navGroups = [
       { title: "Customer CRM", url: "/customers", icon: Users },
       { title: "Sales Analytics", url: "/analytics", icon: BarChart3 },
       { title: "Product Analytics", url: "/product-analytics", icon: PieChart },
+      { title: "Traffic & Funnel", url: "/traffic-analytics", icon: Activity },
     ],
   },
   {
