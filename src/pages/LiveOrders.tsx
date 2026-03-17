@@ -71,7 +71,7 @@ function OrderCard({
   onClick: () => void;
 }) {
   const elapsed = useElapsedMinutes(order.created_at);
-  const overdue = isGhost && elapsed >= 10;
+  const overdue = isGhost && elapsed >= 3;
 
   return (
     <div
