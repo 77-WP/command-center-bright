@@ -42,6 +42,7 @@ export default function NewOrder() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [source, setSource] = useState<string>("");
+  const [orderStatus, setOrderStatus] = useState<string>("completed");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
