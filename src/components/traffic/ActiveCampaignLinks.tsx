@@ -83,7 +83,7 @@ export default function ActiveCampaignLinks() {
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Button size="sm" variant="ghost" onClick={() => handleCopy(link.id, link.generated_url)} className="h-7 w-7 p-0">
-                      {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDelete(link.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive">
                       <Trash2 className="h-3.5 w-3.5" />
