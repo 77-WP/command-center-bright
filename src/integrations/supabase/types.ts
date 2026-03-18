@@ -440,6 +440,27 @@ export type Database = {
           },
         ]
       }
+      site_content: {
+        Row: {
+          content_key: string
+          description: string | null
+          translations: Json
+          updated_at: string | null
+        }
+        Insert: {
+          content_key: string
+          description?: string | null
+          translations?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          content_key?: string
+          description?: string | null
+          translations?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: number

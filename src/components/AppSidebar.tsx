@@ -7,6 +7,7 @@ import {
   ImageIcon,
   TrendingUp,
   Activity,
+  Globe,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -49,6 +50,7 @@ const navGroups = [
       { title: "Menu Manager", url: "/menu", icon: UtensilsCrossed },
       { title: "Hero Banner", url: "/banners", icon: ImageIcon },
       { title: "Upsell Control", url: "/upsell", icon: TrendingUp },
+      { title: "Content & Languages", url: "/content-manager", icon: Globe },
     ],
   },
 ];
