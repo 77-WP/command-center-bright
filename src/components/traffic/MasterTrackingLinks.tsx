@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, BarChart3, Copy, Check, Trash2, Link, Clock, MousePointerClick } from "lucide-react";
+import { ArrowUpDown, Copy, Check, Trash2, Link, Clock, MousePointerClick, Eye, ShoppingCart, CreditCard, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, parseISO, isToday } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +17,7 @@ type SortKey = "clicks" | "orders" | "revenue";
 
 interface Props {
   events: { event_name: string; source: string | null; campaign: string | null; created_at: string | null }[];
-  orders: { source: string | null; campaign: string | null; grand_total: number }[];
+  orders: { source: string | null; campaign: string | null; grand_total: number; created_at?: string | null }[];
 }
 
 interface TrackingRow {
@@ -235,25 +237,43 @@ export default function MasterTrackingLinks({ events, orders }: Props) {
       </Card>
 
       <Dialog open={!!drilldown} onOpenChange={(open) => !open && setDrilldown(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
               Report: {drilldown?.source} / {drilldown?.campaign}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: "Clicks", value: drilldown?.clicks.toLocaleString() ?? "0" },
-              { label: "Orders", value: drilldown?.orders.toLocaleString() ?? "0" },
-              { label: "Revenue", value: formatCurrency(drilldown?.revenue ?? 0) },
-              { label: "CVR", value: drilldown && drilldown.clicks > 0 ? `${((drilldown.orders / drilldown.clicks) * 100).toFixed(1)}%` : "0.0%" },
-            ].map((m) => (
-              <div key={m.label} className="rounded-lg border bg-muted/30 p-3 text-center">
-                <p className="text-xs text-muted-foreground">{m.label}</p>
-                <p className="text-lg font-bold">{m.value}</p>
-              </div>
-            ))}
+          {/* Conversion Funnel */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Conversion Funnel</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(() => {
+                const src = drilldown?.source;
+                const camp = drilldown?.campaign;
+                const matchEvents = events.filter((e) => e.source === src && e.campaign === camp);
+                const visitors = matchEvents.filter((e) => e.event_name === "page_view").length;
+                const addedToCart = matchEvents.filter((e) => e.event_name === "add_to_cart").length;
+                const checkoutStarted = matchEvents.filter((e) => e.event_name === "checkout_started").length;
+                const ordersCreated = orders.filter((o) => o.source === src && o.campaign === camp).length;
+                const funnelSteps = [
+                  { label: "Visitors", value: visitors, icon: Eye, color: "text-blue-600" },
+                  { label: "Added to Cart", value: addedToCart, icon: ShoppingCart, color: "text-amber-600" },
+                  { label: "Checkout Started", value: checkoutStarted, icon: CreditCard, color: "text-purple-600" },
+                  { label: "Orders Created", value: ordersCreated, icon: Package, color: "text-green-600" },
+                ];
+                return funnelSteps.map((step, i) => (
+                  <div key={step.label} className="rounded-lg border bg-muted/30 p-3 text-center relative">
+                    <step.icon className={`h-4 w-4 mx-auto mb-1 ${step.color}`} />
+                    <p className="text-xs text-muted-foreground">{step.label}</p>
+                    <p className="text-xl font-bold">{step.value.toLocaleString()}</p>
+                    {i < funnelSteps.length - 1 && (
+                      <span className="hidden sm:block absolute top-1/2 -right-2.5 text-muted-foreground/40 text-lg">→</span>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -265,24 +285,85 @@ export default function MasterTrackingLinks({ events, orders }: Props) {
             </span>
           </div>
 
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">
-              Traffic Timeline — grouped by {isTodayCampaign ? "Hour" : "Day"}
-            </p>
-            {drilldownData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No click data available</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={drilldownData}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                  <XAxis dataKey="time" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" height={60} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="clicks" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          <Tabs defaultValue="timeline" className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="w-fit">
+              <TabsTrigger value="timeline">📋 Live Event Log</TabsTrigger>
+              <TabsTrigger value="chart">📊 Traffic Chart</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="timeline" className="flex-1 min-h-0 mt-2">
+              {(() => {
+                const src = drilldown?.source;
+                const camp = drilldown?.campaign;
+                const eventLog = events
+                  .filter((e) => e.source === src && e.campaign === camp && e.created_at)
+                  .sort((a, b) => (b.created_at! > a.created_at! ? 1 : -1));
+
+                const eventLabels: Record<string, { icon: string; label: string }> = {
+                  page_view: { icon: "👀", label: "เข้าชมเว็บ" },
+                  add_to_cart: { icon: "🛒", label: "กดลงตะกร้า" },
+                  checkout_started: { icon: "💳", label: "เปิดหน้าชำระเงิน" },
+                };
+
+                if (eventLog.length === 0) {
+                  return <p className="text-sm text-muted-foreground text-center py-8">No events recorded for this link</p>;
+                }
+
+                return (
+                  <ScrollArea className="h-[280px] rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[180px]">Time</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Session</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {eventLog.map((e, i) => {
+                          const mapped = eventLabels[e.event_name] || { icon: "📌", label: e.event_name };
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="text-xs tabular-nums font-mono text-muted-foreground">
+                                {format(parseISO(e.created_at!), "MMM d, HH:mm:ss")}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm">
+                                  {mapped.icon} {mapped.label}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground font-mono truncate max-w-[120px]">
+                                {(e as any).session_id ? String((e as any).session_id).slice(0, 8) + "…" : "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                );
+              })()}
+            </TabsContent>
+
+            <TabsContent value="chart" className="mt-2">
+              <p className="text-xs text-muted-foreground mb-2">
+                Traffic Timeline — grouped by {isTodayCampaign ? "Hour" : "Day"}
+              </p>
+              {drilldownData.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No click data available</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={drilldownData}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
+                    <XAxis dataKey="time" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" height={60} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="clicks" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
