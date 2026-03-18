@@ -7,6 +7,7 @@ import {
   ImageIcon,
   TrendingUp,
   Activity,
+  Globe,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
