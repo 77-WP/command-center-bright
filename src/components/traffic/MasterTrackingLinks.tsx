@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, BarChart3, Copy, Check, Trash2, Link, Clock, MousePointerClick } from "lucide-react";
+import { ArrowUpDown, Copy, Check, Trash2, Link, Clock, MousePointerClick, Eye, ShoppingCart, CreditCard, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, parseISO, isToday } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +17,7 @@ type SortKey = "clicks" | "orders" | "revenue";
 
 interface Props {
   events: { event_name: string; source: string | null; campaign: string | null; created_at: string | null }[];
-  orders: { source: string | null; campaign: string | null; grand_total: number }[];
+  orders: { source: string | null; campaign: string | null; grand_total: number; created_at?: string | null }[];
 }
 
 interface TrackingRow {
