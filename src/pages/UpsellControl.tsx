@@ -63,7 +63,7 @@ export default function UpsellControl() {
     mutationFn: async (val: boolean) => {
       const { error } = await supabase
         .from("app_settings")
-        .update({ is_upsell_active: val } as any)
+        .update({ is_upsell_active: val })
         .eq("id", 1);
       if (error) throw error;
     },
@@ -79,7 +79,7 @@ export default function UpsellControl() {
     mutationFn: async (title: string) => {
       const { error } = await supabase
         .from("app_settings")
-        .update({ upsell_title: title } as any)
+        .update({ upsell_title: title })
         .eq("id", 1);
       if (error) throw error;
     },

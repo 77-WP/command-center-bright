@@ -41,7 +41,7 @@ function ContentRow({ item }: { item: SiteContent }) {
       const { error } = await supabase
         .from("site_content")
         .update({
-          translations: { th, en, zh } as any,
+          translations: { th, en, zh },
           updated_at: new Date().toISOString(),
         })
         .eq("content_key", item.content_key);
@@ -130,7 +130,7 @@ function AddContentKeyDialog() {
       const { error } = await supabase.from("site_content").insert({
         content_key: key,
         description: desc || null,
-        translations: { th: "", en: "", zh: "" } as any,
+        translations: { th: "", en: "", zh: "" },
       });
       if (error) throw error;
     },
