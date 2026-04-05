@@ -384,3 +384,17 @@ DO $$ BEGIN
     ALTER TABLE public.orders ADD CONSTRAINT orders_grand_total_non_negative CHECK (grand_total >= 0);
   END IF;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- 17. categories — enable RLS (was missing) + public read, admin/staff write
+--     Previous migrations created INSERT/UPDATE/DELETE policies but never
+--     enabled RLS or added a SELECT policy, which blocked all reads.
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='categories' AND policyname='Anyone can select categories') THEN
+    CREATE POLICY "Anyone can select categories"
+      ON public.categories FOR SELECT USING (true);
+  END IF;
+END $$;
