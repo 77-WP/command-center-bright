@@ -5,14 +5,26 @@ import { Switch } from "@/components/ui/switch";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export function NotificationButton() {
-  const { permission, enabled, subscribeToPush, disable, sendTestNotification } = useNotifications();
+  const { permission, syncPermission, enabled, subscribeToPush, disable, sendTestNotification } =
+    useNotifications();
 
   async function handleToggle(checked: boolean) {
-    if (checked) {
-      await subscribeToPush();
-    } else {
+    if (!checked) {
       await disable();
+      return;
     }
+
+    // iOS PWA requires Notification.requestPermission() to be the FIRST await
+    // called directly inside the tap handler — no async work before it.
+    if (typeof Notification === "undefined") return;
+
+    const result = await Notification.requestPermission();
+    syncPermission(result);
+
+    if (result === "granted") {
+      await subscribeToPush();
+    }
+    // If "denied" or "default", the updated permission state drives the UI message below.
   }
 
   return (
@@ -53,6 +65,12 @@ export function NotificationButton() {
           </span>
         </div>
 
+        {permission === "denied" && (
+          <p className="text-xs text-destructive leading-relaxed">
+            กรุณาเปิด Notifications ใน iPhone Settings → Best Part → Notifications
+          </p>
+        )}
+
         {enabled && (
           <Button
             variant="outline"
@@ -62,12 +80,6 @@ export function NotificationButton() {
           >
             Send Test Notification
           </Button>
-        )}
-
-        {permission === "denied" && (
-          <p className="text-xs text-destructive">
-            Notifications are blocked. Please enable them in your browser settings.
-          </p>
         )}
       </PopoverContent>
     </Popover>

@@ -4,12 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 const ENABLED_KEY = "notifications_enabled";
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
-/** Convert base64url string to Uint8Array (required by PushManager.subscribe) */
 function urlBase64ToUint8Array(base64url: string): Uint8Array {
   const padded = base64url.replace(/-/g, "+").replace(/_/g, "/");
   const padding = "=".repeat((4 - (padded.length % 4)) % 4);
-  const base64 = padded + padding;
-  const binary = atob(base64);
+  const binary = atob(padded + padding);
   return Uint8Array.from(binary, (c) => c.charCodeAt(0));
 }
 
@@ -24,28 +22,28 @@ export function useNotifications() {
     setEnabled(localStorage.getItem(ENABLED_KEY) === "true");
   }, []);
 
-  async function requestPermission(): Promise<boolean> {
-    if (typeof Notification === "undefined") return false;
-    const result = await Notification.requestPermission();
+  /** Call this immediately after Notification.requestPermission() resolves in the UI layer. */
+  function syncPermission(result: NotificationPermission) {
     setPermission(result);
-    return result === "granted";
   }
 
+  /**
+   * Registers the SW, creates a PushManager subscription, and saves it to Supabase.
+   * Assumes permission is already "granted" — caller must call
+   * Notification.requestPermission() first (directly from a user-gesture handler).
+   */
   async function subscribeToPush(): Promise<boolean> {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
     if (!VAPID_PUBLIC_KEY) {
       console.error("VITE_VAPID_PUBLIC_KEY is not set");
       return false;
     }
-
-    const granted = await requestPermission();
-    if (!granted) return false;
+    if (Notification.permission !== "granted") return false;
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      // Create (or reuse) a PushManager subscription tied to our VAPID key
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -56,11 +54,9 @@ export function useNotifications() {
         keys: { p256dh: string; auth: string };
       };
 
-      // Upsert into Supabase so re-subscribing on the same device doesn't duplicate
-      const { error } = await supabase.from("push_subscriptions").upsert(
-        { endpoint, p256dh: keys.p256dh, auth: keys.auth },
-        { onConflict: "endpoint" },
-      );
+      const { error } = await supabase
+        .from("push_subscriptions")
+        .upsert({ endpoint, p256dh: keys.p256dh, auth: keys.auth }, { onConflict: "endpoint" });
 
       if (error) {
         console.error("Failed to save push subscription:", error);
@@ -80,7 +76,6 @@ export function useNotifications() {
     localStorage.setItem(ENABLED_KEY, "false");
     setEnabled(false);
 
-    // Best-effort: unsubscribe from PushManager and remove from DB
     try {
       if ("serviceWorker" in navigator) {
         const registration = await navigator.serviceWorker.ready;
@@ -110,6 +105,7 @@ export function useNotifications() {
 
   return {
     permission,
+    syncPermission,
     enabled: enabled && permission === "granted",
     subscribeToPush,
     disable,
