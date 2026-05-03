@@ -55,16 +55,15 @@ export function useNotifications() {
       console.log("[notifications] existing PushSubscription:", existingSub ? existingSub.endpoint.slice(0, 60) : "none");
       setHasSub(!!existingSub);
 
-      if (perm === "granted" && storedEnabled) {
+      if (perm === "granted") {
         if (existingSub) {
-          // Already subscribed — just ensure enabled state is true
+          // Already subscribed — ensure enabled state is true
           console.log("[notifications] already subscribed, setting enabled=true");
           setEnabled(true);
         } else {
-          // Permission granted and user opted in, but subscription is missing
-          // (e.g. subscription expired, or first load after granting in Settings).
-          // Re-subscribe using the ready registration directly.
-          console.log("[notifications] permission granted + stored, but no sub — re-subscribing");
+          // Permission is granted but no subscription on this device yet.
+          // Auto-subscribe immediately — don't wait for user tap.
+          console.log("[notifications] permission granted, no sub — auto-subscribing now");
           await doSubscribeWithReg(reg);
         }
       }

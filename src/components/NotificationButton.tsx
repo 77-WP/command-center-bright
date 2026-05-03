@@ -7,8 +7,6 @@ import { useNotifications } from "@/hooks/useNotifications";
 export function NotificationButton() {
   const {
     permission,
-    swReady,
-    hasSub,
     syncPermission,
     enabled,
     subscribeToPush,
@@ -77,11 +75,6 @@ export function NotificationButton() {
             {enabled ? "Enabled ✅" : "Disabled"}
           </span>
         </div>
-
-        {/* Debug status line */}
-        <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
-          SW: {swReady ? "ready" : "not ready"} | Sub: {hasSub ? "yes" : "no"} | Permission: {permission}
-        </p>
 
         {permission === "denied" && (
           <p className="text-xs text-destructive leading-relaxed">
