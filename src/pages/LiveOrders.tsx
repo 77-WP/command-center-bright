@@ -76,7 +76,7 @@ function OrderCard({
   return (
     <div
       onClick={onClick}
-      className={`rounded-lg border p-4 space-y-3 cursor-pointer transition-colors hover:border-primary/40 ${
+      className={`rounded-lg border p-4 space-y-3 cursor-pointer transition-colors hover:border-primary/40 min-h-[44px] ${
         overdue
           ? "bg-kanban-ghost-bg border-kanban-ghost/40"
           : "bg-card border-border"
@@ -144,7 +144,7 @@ function KanbanColumn({
   onCardClick: (order: OrderWithCustomer) => void;
 }) {
   return (
-    <div className="flex-1 min-w-[300px]">
+    <div className="w-full md:flex-1 md:min-w-[300px]">
       <div className="flex items-center gap-3 mb-4 sticky top-0 bg-background py-2 z-10">
         <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
@@ -251,7 +251,7 @@ export default function LiveOrders() {
         </Button>
       </div>
 
-      <div className="flex gap-6 overflow-x-auto pb-4">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 pb-4">
         <KanbanColumn
           title="🚨 Awaiting LINE (Action Required)"
           orders={pendingLine}
