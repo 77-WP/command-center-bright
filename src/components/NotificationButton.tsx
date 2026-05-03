@@ -9,22 +9,28 @@ export function NotificationButton() {
     useNotifications();
 
   async function handleToggle(checked: boolean) {
+    console.log("[NotificationButton] handleToggle checked:", checked);
+    console.log("[NotificationButton] Notification.permission at tap time:", typeof Notification !== "undefined" ? Notification.permission : "unavailable");
+
     if (!checked) {
       await disable();
       return;
     }
 
-    // iOS PWA requires Notification.requestPermission() to be the FIRST await
-    // called directly inside the tap handler — no async work before it.
-    if (typeof Notification === "undefined") return;
+    // iOS PWA: requestPermission() MUST be the first await in the tap handler.
+    if (typeof Notification === "undefined") {
+      console.error("[NotificationButton] Notification API not available");
+      return;
+    }
 
     const result = await Notification.requestPermission();
+    console.log("[NotificationButton] requestPermission result:", result);
     syncPermission(result);
 
     if (result === "granted") {
-      await subscribeToPush();
+      const ok = await subscribeToPush();
+      console.log("[NotificationButton] subscribeToPush result:", ok);
     }
-    // If "denied" or "default", the updated permission state drives the UI message below.
   }
 
   return (
@@ -64,6 +70,11 @@ export function NotificationButton() {
             {enabled ? "Enabled ✅" : "Disabled"}
           </span>
         </div>
+
+        {/* Debug: always show live permission status */}
+        <p className="text-xs text-muted-foreground font-mono">
+          Permission: {permission}
+        </p>
 
         {permission === "denied" && (
           <p className="text-xs text-destructive leading-relaxed">
