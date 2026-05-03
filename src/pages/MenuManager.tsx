@@ -62,7 +62,6 @@ export default function MenuManager() {
       toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
     },
     onSuccess: () => toast({ title: "Updated", description: "Menu status updated successfully." }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["menu-items-all"] }),
   });
 
   const deleteMutation = useMutation({

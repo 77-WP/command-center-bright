@@ -44,6 +44,7 @@ import HeroBannerManager from "@/pages/HeroBannerManager";
 import UpsellControl from "@/pages/UpsellControl";
 import TrafficAnalytics from "@/pages/TrafficAnalytics";
 import ContentManager from "@/pages/ContentManager";
+import WebsiteControl from "@/pages/WebsiteControl";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ function AppRoutes() {
       <Route path="/upsell" element={<ProtectedRoute><UpsellControl /></ProtectedRoute>} />
       <Route path="/traffic-analytics" element={<ProtectedRoute><TrafficAnalytics /></ProtectedRoute>} />
       <Route path="/content-manager" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />
+      <Route path="/website-control" element={<ProtectedRoute><WebsiteControl /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

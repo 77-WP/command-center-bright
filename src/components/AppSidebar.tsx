@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Activity,
   Globe,
+  Power,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -51,6 +52,7 @@ const navGroups = [
       { title: "Hero Banner", url: "/banners", icon: ImageIcon },
       { title: "Upsell Control", url: "/upsell", icon: TrendingUp },
       { title: "Content & Languages", url: "/content-manager", icon: Globe },
+      { title: "Website Control", url: "/website-control", icon: Power },
     ],
   },
 ];
