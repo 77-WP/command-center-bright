@@ -206,7 +206,8 @@ export default function LiveOrders() {
         { event: "*", schema: "public", table: "orders" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const newId = (payload.new as any).id;
+            const newOrder = payload.new as any;
+            const newId = newOrder.id;
             setNewOrderIds((prev) => new Set(prev).add(newId));
             setTimeout(() => {
               setNewOrderIds((prev) => {
@@ -215,6 +216,20 @@ export default function LiveOrders() {
                 return next;
               });
             }, 3000);
+
+            // Push notification
+            if ("serviceWorker" in navigator && Notification.permission === "granted") {
+              navigator.serviceWorker.ready.then((reg) => {
+                reg.showNotification("🔔 ออเดอร์ใหม่!", {
+                  body: `฿${Number(newOrder.grand_total ?? 0).toLocaleString()} · ${newOrder.fulfillment_type || "Order"}`,
+                  icon: "/favicon.ico",
+                  badge: "/favicon.ico",
+                  tag: "new-order",
+                  requireInteraction: true,
+                  vibrate: [200, 100, 200],
+                } as NotificationOptions & { vibrate?: number[] });
+              });
+            }
           }
           fetchOrders();
         }

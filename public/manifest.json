@@ -1,0 +1,11 @@
+{
+  "name": "Best Part Command Center",
+  "short_name": "BP Command",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDF5",
+  "theme_color": "#C9933A",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "any" }
+  ]
+}
