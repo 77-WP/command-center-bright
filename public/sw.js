@@ -1,30 +1,31 @@
 // Service Worker for Best Part Command Center
-// Handles push notifications and notification click events
+// Handles server-sent Web Push notifications (VAPID) and notification clicks.
 
 self.addEventListener("push", (event) => {
-  let data = {
-    title: "🔔 ออเดอร์ใหม่!",
-    body: "New order received",
-    icon: "/favicon.ico",
-  };
+  let title = "🔔 ออเดอร์ใหม่!";
+  let body = "New order received";
+  let icon = "/favicon.ico";
 
   if (event.data) {
     try {
-      data = { ...data, ...event.data.json() };
+      const data = event.data.json();
+      if (data.title) title = data.title;
+      if (data.body) body = data.body;
+      if (data.icon) icon = data.icon;
     } catch {
-      data.body = event.data.text();
+      body = event.data.text();
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon || "/favicon.ico",
+    self.registration.showNotification(title, {
+      body,
+      icon,
       badge: "/favicon.ico",
       tag: "new-order",
       requireInteraction: true,
       vibrate: [200, 100, 200],
-    })
+    }),
   );
 });
 
@@ -43,6 +44,6 @@ self.addEventListener("notificationclick", (event) => {
         if (clients.openWindow) {
           return clients.openWindow("/");
         }
-      })
+      }),
   );
 });

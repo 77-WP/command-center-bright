@@ -11,7 +11,7 @@ export function NotificationButton() {
     if (checked) {
       await subscribeToPush();
     } else {
-      disable();
+      await disable();
     }
   }
 
