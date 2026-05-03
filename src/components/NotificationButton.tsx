@@ -5,12 +5,19 @@ import { Switch } from "@/components/ui/switch";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export function NotificationButton() {
-  const { permission, syncPermission, enabled, subscribeToPush, disable, sendTestNotification } =
-    useNotifications();
+  const {
+    permission,
+    swReady,
+    hasSub,
+    syncPermission,
+    enabled,
+    subscribeToPush,
+    disable,
+    sendTestNotification,
+  } = useNotifications();
 
   async function handleToggle(checked: boolean) {
-    console.log("[NotificationButton] handleToggle checked:", checked);
-    console.log("[NotificationButton] Notification.permission at tap time:", typeof Notification !== "undefined" ? Notification.permission : "unavailable");
+    console.log("[NotificationButton] toggle →", checked, "| permission at tap:", typeof Notification !== "undefined" ? Notification.permission : "unavailable");
 
     if (!checked) {
       await disable();
@@ -19,17 +26,17 @@ export function NotificationButton() {
 
     // iOS PWA: requestPermission() MUST be the first await in the tap handler.
     if (typeof Notification === "undefined") {
-      console.error("[NotificationButton] Notification API not available");
+      console.error("[NotificationButton] Notification API unavailable");
       return;
     }
 
     const result = await Notification.requestPermission();
-    console.log("[NotificationButton] requestPermission result:", result);
+    console.log("[NotificationButton] requestPermission →", result);
     syncPermission(result);
 
     if (result === "granted") {
       const ok = await subscribeToPush();
-      console.log("[NotificationButton] subscribeToPush result:", ok);
+      console.log("[NotificationButton] subscribeToPush →", ok);
     }
   }
 
@@ -71,9 +78,9 @@ export function NotificationButton() {
           </span>
         </div>
 
-        {/* Debug: always show live permission status */}
-        <p className="text-xs text-muted-foreground font-mono">
-          Permission: {permission}
+        {/* Debug status line */}
+        <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
+          SW: {swReady ? "ready" : "not ready"} | Sub: {hasSub ? "yes" : "no"} | Permission: {permission}
         </p>
 
         {permission === "denied" && (
