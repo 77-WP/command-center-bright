@@ -14,9 +14,9 @@ interface FeedbackRow {
   id: string;
   mood: string;
   category: string | null;
-  platform: string | null;
-  comment: string | null;
-  ticket_number: string | null;
+  source: string | null;
+  text: string | null;
+  order_number: string | null;
   phone: string | null;
   status: string;
   created_at: string;
@@ -124,8 +124,8 @@ function FeedbackCard({
           {row.category && (
             <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{row.category}</span>
           )}
-          {row.platform && (
-            <span className="text-xs text-muted-foreground">{row.platform}</span>
+          {row.source && (
+            <span className="text-xs text-muted-foreground">{row.source}</span>
           )}
         </div>
         <span className="text-xs text-muted-foreground">{timeAgo}</span>
@@ -133,8 +133,8 @@ function FeedbackCard({
 
       {/* Body */}
       <p className="text-sm leading-relaxed">
-        {expanded ? row.comment : truncate(row.comment, 100)}
-        {row.comment && row.comment.length > 100 && (
+        {expanded ? row.text : truncate(row.text, 100)}
+        {row.text && row.text.length > 100 && (
           <button
             className="ml-1 text-xs text-primary underline"
             onClick={() => setExpanded(!expanded)}
@@ -147,7 +147,7 @@ function FeedbackCard({
       {/* Footer */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {row.ticket_number && <span>#{row.ticket_number}</span>}
+          {row.order_number && <span>#{row.order_number}</span>}
           <span>{maskPhone(row.phone)}</span>
           <span
             className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -212,14 +212,14 @@ export default function CupidInbox() {
       let query = supabase
         .from("cupid_feedback")
         .select(
-          "id, mood, category, platform, comment, ticket_number, phone, status, created_at"
+          "id, mood, category, source, text, order_number, phone, status, created_at"
         )
         .order("created_at", { ascending: false })
         .range(pageIndex * PAGE_SIZE, pageIndex * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (mood !== "all") query = query.eq("mood", mood);
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
-      if (platform !== "all") query = query.eq("platform", platform);
+      if (platform !== "all") query = query.eq("source", platform);
 
       if (dateFilter === "today") {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
