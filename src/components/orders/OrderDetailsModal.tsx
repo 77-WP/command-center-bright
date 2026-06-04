@@ -73,29 +73,18 @@ function parseInternalNotes(notes: string | null | undefined): { name?: string; 
   return result;
 }
 
-/** Format pickup_time (ISO or HH:MM) to HH:MM display */
+/** Format pickup_time from Supabase "time" column (e.g. "15:10:00") to "HH:MM" */
 function formatPickupTime(pickup_time: string): string {
-  // If it looks like HH:MM already
-  if (/^\d{2}:\d{2}$/.test(pickup_time)) return pickup_time;
-  try {
-    const d = new Date(pickup_time);
-    return d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
-  } catch {
-    return pickup_time;
-  }
+  // Take first 5 chars: "15:10:00" → "15:10"
+  return pickup_time.substring(0, 5);
 }
 
-/** Check if pickup_time is within 15 minutes from now */
+/** Check if pickup_time (HH:MM:SS) is within 15 minutes from now */
 function isPickupUrgent(pickup_time: string): boolean {
   try {
-    let pickupDate: Date;
-    if (/^\d{2}:\d{2}$/.test(pickup_time)) {
-      const now = new Date();
-      const [h, m] = pickup_time.split(":").map(Number);
-      pickupDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-    } else {
-      pickupDate = new Date(pickup_time);
-    }
+    const [h, m] = pickup_time.split(":").map(Number);
+    const now = new Date();
+    const pickupDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
     const diffMs = pickupDate.getTime() - Date.now();
     return diffMs >= 0 && diffMs <= 15 * 60 * 1000;
   } catch {
