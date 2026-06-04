@@ -29,6 +29,11 @@ interface CupidSettings {
   announcement_is_active: boolean;
   announcement_text: string | null;
   announcement_title: string | null;
+  telegram_bot_token: string | null;
+  telegram_chat_id: string | null;
+  telegram_noti_enabled: boolean;
+  telegram_noti_on_problem: boolean;
+  telegram_noti_on_neutral: boolean;
 }
 
 interface WeeklyQuestion {
@@ -84,6 +89,100 @@ function Toggle({
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+// ─── Telegram Settings ───────────────────────────────────────────────────────
+
+function TelegramSettings() {
+  const [settings, setSettings] = useState<CupidSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("cupid_settings")
+      .select(
+        "id, qa_is_active, announcement_is_active, announcement_text, announcement_title, telegram_bot_token, telegram_chat_id, telegram_noti_enabled, telegram_noti_on_problem, telegram_noti_on_neutral"
+      )
+      .eq("id", 1)
+      .single()
+      .then(({ data }) => {
+        setSettings(data as CupidSettings);
+        setLoading(false);
+      });
+  }, []);
+
+  async function updateField(field: keyof CupidSettings, value: boolean) {
+    if (!settings) return;
+    setSettings((prev) => prev ? { ...prev, [field]: value } : prev);
+    await supabase.from("cupid_settings").update({ [field]: value }).eq("id", 1);
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-4">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!settings) return null;
+
+  const hasToken = !!settings.telegram_bot_token;
+  const maskedChatId = settings.telegram_chat_id
+    ? settings.telegram_chat_id.slice(0, -4).replace(/./g, "*") +
+      settings.telegram_chat_id.slice(-4)
+    : "—";
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <p className="text-sm font-semibold">การแจ้งเตือน Telegram</p>
+        <span
+          className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+            hasToken
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-gray-100 text-gray-500 border border-gray-200"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              hasToken ? "bg-green-500 animate-pulse" : "bg-gray-400"
+            }`}
+          />
+          {hasToken ? "🟢 เชื่อมต่อแล้ว" : "ยังไม่ได้ตั้งค่า"}
+        </span>
+      </div>
+
+      <div className="divide-y divide-border px-4">
+        <Toggle
+          label="เปิด Telegram แจ้งเตือน"
+          checked={settings.telegram_noti_enabled}
+          onChange={(v) => updateField("telegram_noti_enabled", v)}
+        />
+        <Toggle
+          label="แจ้งเตือนเมื่อมีปัญหา 😟"
+          checked={settings.telegram_noti_on_problem}
+          onChange={(v) => updateField("telegram_noti_on_problem", v)}
+        />
+        <Toggle
+          label="แจ้งเตือน Neutral 😐"
+          checked={settings.telegram_noti_on_neutral}
+          onChange={(v) => updateField("telegram_noti_on_neutral", v)}
+        />
+      </div>
+
+      <div className="px-4 py-3 bg-muted/40 border-t border-border space-y-1">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium w-16">Bot:</span>
+          <span className="font-mono">@bestpartcupid_bot</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium w-16">Chat ID:</span>
+          <span className="font-mono">{maskedChatId}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -500,65 +599,78 @@ export default function CupidPageSettings() {
   const [activePage, setActivePage] = useState<PageKey>("landing");
 
   return (
-    <div className="flex gap-5">
-      {/* Left sidebar */}
-      <aside className="hidden md:block w-48 shrink-0">
-        <div className="sticky top-4 space-y-0.5">
-          <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground px-2 mb-2">
-            Pages
-          </p>
-          {PAGES.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setActivePage(p.key)}
-              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
-                activePage === p.key
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </aside>
-
-      {/* Mobile top nav */}
-      <div className="md:hidden w-full">
-        <select
-          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background mb-4"
-          value={activePage}
-          onChange={(e) => setActivePage(e.target.value as PageKey)}
-        >
-          {PAGES.map((p) => (
-            <option key={p.key} value={p.key}>{p.label}</option>
-          ))}
-        </select>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold">⚙️ Page Settings</h1>
+        <p className="text-sm text-muted-foreground">จัดการเนื้อหาและการตั้งค่าของ Cupid App</p>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 min-w-0 space-y-6">
-        <div>
-          <h1 className="text-xl font-bold">⚙️ Page Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            {PAGES.find((p) => p.key === activePage)?.label}
-          </p>
+      {/* Notification settings — always visible at top */}
+      <div>
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">
+          การแจ้งเตือน
+        </p>
+        <TelegramSettings />
+      </div>
+
+      {/* Page CMS */}
+      <div className="flex gap-5">
+        {/* Left sidebar */}
+        <aside className="hidden md:block w-48 shrink-0">
+          <div className="sticky top-4 space-y-0.5">
+            <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground px-2 mb-2">
+              Pages
+            </p>
+            {PAGES.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setActivePage(p.key)}
+                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
+                  activePage === p.key
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-muted-foreground hover:bg-accent/50"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* Mobile top nav */}
+        <div className="md:hidden w-full">
+          <select
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background mb-4"
+            value={activePage}
+            onChange={(e) => setActivePage(e.target.value as PageKey)}
+          >
+            {PAGES.map((p) => (
+              <option key={p.key} value={p.key}>{p.label}</option>
+            ))}
+          </select>
         </div>
 
-        {activePage === "landing" && (
-          <>
-            <BannerSection />
-            <FeatureToggles />
-          </>
-        )}
+        {/* Page content */}
+        <div className="flex-1 min-w-0 space-y-6">
+          <p className="text-sm font-medium text-muted-foreground">
+            {PAGES.find((p) => p.key === activePage)?.label}
+          </p>
 
-        {activePage === "thanks" && <WeeklyQASection />}
+          {activePage === "landing" && (
+            <>
+              <BannerSection />
+              <FeatureToggles />
+            </>
+          )}
 
-        {activePage !== "landing" && activePage !== "thanks" && (
-          <ComingSoonContent
-            page={PAGES.find((p) => p.key === activePage)?.label ?? activePage}
-          />
-        )}
+          {activePage === "thanks" && <WeeklyQASection />}
+
+          {activePage !== "landing" && activePage !== "thanks" && (
+            <ComingSoonContent
+              page={PAGES.find((p) => p.key === activePage)?.label ?? activePage}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
