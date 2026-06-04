@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   format,
@@ -36,6 +37,7 @@ interface KpiData {
   problemPending: number;
   neutralPending: number;
   monthCount: number;
+  promotedCount: number;
 }
 
 interface DailyBreakdown {
@@ -126,6 +128,7 @@ function KpiCard({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function CupidDashboard() {
+  const navigate = useNavigate();
   const [kpi, setKpi] = useState<KpiData | null>(null);
   const [dailyData, setDailyData] = useState<DailyBreakdown[]>([]);
   const [pieData, setPieData] = useState<MoodSlice[]>([]);
@@ -160,6 +163,7 @@ export default function CupidDashboard() {
       monthMoodRes,
       platformRes,
       weeklyRes,
+      promotedRes,
     ] = await Promise.all([
       supabase
         .from("cupid_feedback")
@@ -200,6 +204,10 @@ export default function CupidDashboard() {
         .select("week_start, total, happy_rate_pct, problems, resolved")
         .order("week_start", { ascending: false })
         .limit(4),
+      supabase
+        .from("cupid_feedback")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "promoted"),
     ]);
 
     // ── KPIs ──
@@ -213,7 +221,8 @@ export default function CupidDashboard() {
     const problemPending = pendingRows.filter((r) => r.mood === "problem").length;
     const neutralPending = pendingRows.filter((r) => r.mood === "neutral").length;
     const monthCount = monthRes.count ?? 0;
-    setKpi({ todayCount, yesterdayCount, happyRate, problemPending, neutralPending, monthCount });
+    const promotedCount = promotedRes.count ?? 0;
+    setKpi({ todayCount, yesterdayCount, happyRate, problemPending, neutralPending, monthCount, promotedCount });
 
     // ── 7-day line ──
     const last7Rows = last7Res.data ?? [];
@@ -501,6 +510,29 @@ export default function CupidDashboard() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      {(kpi.problemPending > 0 || kpi.promotedCount > 0) && (
+        <div className="flex gap-3 flex-wrap">
+          {kpi.problemPending > 0 && (
+            <button
+              onClick={() => navigate("/cupid/inbox?mood=problem&status=pending")}
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+            >
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              🚨 ดู {kpi.problemPending} ปัญหาที่รอแก้ไข
+            </button>
+          )}
+          {kpi.promotedCount > 0 && (
+            <button
+              onClick={() => navigate("/cupid/meunfun")}
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+            >
+              ✨ จัดการ เหมือนฝัน {kpi.promotedCount} รายการ
+            </button>
+          )}
         </div>
       )}
 

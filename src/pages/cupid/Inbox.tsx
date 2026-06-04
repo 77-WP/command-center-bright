@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import { CheckCircle2, XCircle, Sparkles, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type Mood = "happy" | "neutral" | "problem" | "all";
 type StatusFilter = "all" | "pending" | "resolved" | "rejected" | "promoted";
-type Platform = "all" | "Grab" | "LINE MAN" | "Shopee" | "Walk-in";
+type Platform = "all" | "grab" | "lineman" | "shopee" | "walkin";
 type DateFilter = "today" | "week" | "month" | "all";
 
 interface FeedbackRow {
@@ -19,15 +22,24 @@ interface FeedbackRow {
   order_number: string | null;
   phone: string | null;
   status: string;
+  is_critical: boolean | null;
+  is_resolved: boolean | null;
   created_at: string;
 }
 
 const PAGE_SIZE = 20;
 
-const MOOD_BORDER: Record<string, string> = {
-  happy: "border-l-green-500",
-  neutral: "border-l-amber-500",
-  problem: "border-l-red-500",
+const SOURCE_LABEL: Record<string, string> = {
+  grab: "Grab Food",
+  lineman: "LINE MAN",
+  shopee: "Shopee Food",
+  walkin: "Walk-in",
+};
+
+const MOOD_BORDER_STYLE: Record<string, string> = {
+  happy: "border-l-[#22C55E]",
+  neutral: "border-l-[#F59E0B]",
+  problem: "border-l-[#EF4444]",
 };
 
 const MOOD_EMOJI: Record<string, string> = {
@@ -44,17 +56,19 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "⏳ Pending",
-  resolved: "✅ Resolved",
-  rejected: "❌ Rejected",
+  pending: "⏳ รอดำเนินการ",
+  resolved: "✅ แก้ไขแล้ว",
+  rejected: "❌ ปฏิเสธ",
   promoted: "✨ Promoted",
 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function maskPhone(phone: string | null): string {
   if (!phone) return "—";
   const digits = phone.replace(/\D/g, "");
-  if (digits.length < 4) return phone;
-  return digits.slice(0, 3) + "-XXX-X" + digits.slice(-3);
+  if (digits.length < 5) return phone;
+  return digits.slice(0, 3) + "-XXX-XX" + digits.slice(-2);
 }
 
 function truncate(text: string | null, len: number): string {
@@ -62,95 +76,92 @@ function truncate(text: string | null, len: number): string {
   return text.length > len ? text.slice(0, len) + "…" : text;
 }
 
-function RejectModal({
-  onConfirm,
-  onCancel,
-}: {
-  onConfirm: (reason: string) => void;
-  onCancel: () => void;
-}) {
-  const [reason, setReason] = useState("");
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-xl p-5 w-80 space-y-3 shadow-xl">
-        <p className="font-semibold text-sm">ระบุเหตุผลที่ Reject</p>
-        <textarea
-          className="w-full border border-border rounded-lg p-2 text-sm bg-background resize-none h-24 focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="เหตุผล..."
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            ยกเลิก
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => onConfirm(reason)}
-            disabled={!reason.trim()}
-          >
-            Reject
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+function ticketId(id: string): string {
+  return id.slice(0, 8).toUpperCase();
 }
+
+// ─── Feedback Card ────────────────────────────────────────────────────────────
 
 function FeedbackCard({
   row,
   onAction,
 }: {
   row: FeedbackRow;
-  onAction: (id: string, action: "resolve" | "reject" | "promote") => void;
+  onAction: (id: string, action: "resolve" | "reject" | "promote", reason?: string) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const borderClass = MOOD_BORDER[row.mood] ?? "border-l-gray-300";
-  const emoji = MOOD_EMOJI[row.mood] ?? "❓";
+  const [rejectMode, setRejectMode] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [acting, setActing] = useState(false);
+
+  const borderClass = MOOD_BORDER_STYLE[row.mood] ?? "border-l-gray-300";
+  const emoji = MOOD_EMOJI[row.mood] ?? "💬";
+  const isPending = row.status === "pending";
+
   const timeAgo = formatDistanceToNow(new Date(row.created_at), {
     addSuffix: true,
     locale: th,
   });
 
+  async function act(action: "resolve" | "reject" | "promote", reason?: string) {
+    setActing(true);
+    await onAction(row.id, action, reason);
+    setActing(false);
+    setRejectMode(false);
+    setRejectReason("");
+  }
+
   return (
-    <div
-      className={`bg-card border border-border border-l-4 ${borderClass} rounded-xl p-4 space-y-2`}
-    >
+    <div className={`bg-card border border-border border-l-4 ${borderClass} rounded-xl p-4 space-y-2.5`}>
+
       {/* Top row */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 text-sm">
-          <span>{emoji}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          <span className="text-base">{emoji}</span>
+          {row.is_critical && (
+            <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">
+              🚨 Critical
+            </span>
+          )}
           {row.category && (
             <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{row.category}</span>
           )}
           {row.source && (
-            <span className="text-xs text-muted-foreground">{row.source}</span>
+            <span className="text-xs text-muted-foreground">
+              {SOURCE_LABEL[row.source.toLowerCase()] ?? row.source}
+            </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">{timeAgo}</span>
+        <span className="text-xs text-muted-foreground shrink-0">{timeAgo}</span>
       </div>
 
       {/* Body */}
       <p className="text-sm leading-relaxed">
-        {expanded ? row.text : truncate(row.text, 100)}
-        {row.text && row.text.length > 100 && (
-          <button
-            className="ml-1 text-xs text-primary underline"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? "ย่อ" : "อ่านต่อ"}
-          </button>
+        {!row.text ? (
+          <span className="text-muted-foreground italic">ไม่มีข้อความ</span>
+        ) : (
+          <>
+            {expanded ? row.text : truncate(row.text, 120)}
+            {row.text.length > 120 && (
+              <button
+                className="ml-1 text-xs text-primary underline"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? "ย่อ" : "อ่านต่อ"}
+              </button>
+            )}
+          </>
         )}
       </p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+          <span className="font-mono">ID: {ticketId(row.id)}</span>
           {row.order_number && <span>#{row.order_number}</span>}
           <span>{maskPhone(row.phone)}</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+            className={`px-2 py-0.5 rounded-full font-medium ${
               STATUS_BADGE[row.status] ?? "bg-muted text-muted-foreground"
             }`}
           >
@@ -158,32 +169,63 @@ function FeedbackCard({
           </span>
         </div>
 
-        {/* Actions */}
-        {row.status === "pending" && (
-          <div className="flex items-center gap-1">
+        {/* Action buttons — always visible for pending */}
+        {isPending && !rejectMode && (
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
-              onClick={() => onAction(row.id, "resolve")}
-              className="flex items-center gap-0.5 text-xs text-green-600 hover:bg-green-50 px-2 py-1 rounded-lg transition-colors"
-              title="Resolve"
+              onClick={() => act("resolve")}
+              disabled={acting}
+              className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Resolve</span>
+              แก้ไขแล้ว
             </button>
             <button
-              onClick={() => onAction(row.id, "reject")}
-              className="flex items-center gap-0.5 text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
-              title="Reject"
+              onClick={() => setRejectMode(true)}
+              disabled={acting}
+              className="flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
             >
               <XCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Reject</span>
+              ปฏิเสธ
             </button>
             <button
-              onClick={() => onAction(row.id, "promote")}
-              className="flex items-center gap-0.5 text-xs text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-lg transition-colors"
-              title="Promote"
+              onClick={() => act("promote")}
+              disabled={acting}
+              className="flex items-center gap-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Promote</span>
+              ส่งเหมือนฝัน
+            </button>
+            {acting && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+          </div>
+        )}
+
+        {/* Inline reject input */}
+        {isPending && rejectMode && (
+          <div className="flex gap-2 items-center">
+            <input
+              autoFocus
+              className="flex-1 text-xs border border-border rounded-lg px-2.5 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-destructive"
+              placeholder="ระบุเหตุผลที่ปฏิเสธ..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && rejectReason.trim()) act("reject", rejectReason);
+                if (e.key === "Escape") { setRejectMode(false); setRejectReason(""); }
+              }}
+            />
+            <button
+              onClick={() => act("reject", rejectReason)}
+              disabled={!rejectReason.trim() || acting}
+              className="text-xs font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 px-2.5 py-1.5 rounded-lg disabled:opacity-40 transition-colors"
+            >
+              ยืนยัน
+            </button>
+            <button
+              onClick={() => { setRejectMode(false); setRejectReason(""); }}
+              className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5"
+            >
+              ยกเลิก
             </button>
           </div>
         )}
@@ -192,28 +234,34 @@ function FeedbackCard({
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function CupidInbox() {
-  const [mood, setMood] = useState<Mood>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchParams] = useSearchParams();
+
+  // initialise filters from URL params (e.g. from Dashboard quick-actions)
+  const [mood, setMood] = useState<Mood>(
+    (searchParams.get("mood") as Mood) ?? "all"
+  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    (searchParams.get("status") as StatusFilter) ?? "all"
+  );
   const [platform, setPlatform] = useState<Platform>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
 
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
-
-  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
 
   const fetchRows = useCallback(
     async (pageIndex: number, reset: boolean) => {
       setLoading(true);
       const now = new Date();
+
       let query = supabase
         .from("cupid_feedback")
-        .select(
-          "id, mood, category, source, text, order_number, phone, status, created_at"
-        )
+        .select("id, mood, category, source, text, order_number, phone, status, is_critical, is_resolved, created_at")
         .order("created_at", { ascending: false })
         .range(pageIndex * PAGE_SIZE, pageIndex * PAGE_SIZE + PAGE_SIZE - 1);
 
@@ -228,8 +276,8 @@ export default function CupidInbox() {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
         query = query.gte("created_at", weekAgo);
       } else if (dateFilter === "month") {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        query = query.gte("created_at", monthStart);
+        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        query = query.gte("created_at", start);
       }
 
       const { data, error } = await query;
@@ -254,43 +302,32 @@ export default function CupidInbox() {
     fetchRows(next, false);
   }
 
-  async function handleAction(id: string, action: "resolve" | "reject" | "promote") {
-    if (action === "reject") {
-      setRejectTarget(id);
-      return;
-    }
-    const updates: Record<string, string> = {};
+  async function handleAction(
+    id: string,
+    action: "resolve" | "reject" | "promote",
+    reason?: string
+  ) {
+    const updates: Record<string, unknown> = {};
     if (action === "resolve") {
       updates.status = "resolved";
+      updates.is_resolved = true;
       updates.resolved_at = new Date().toISOString();
+    } else if (action === "reject") {
+      updates.status = "rejected";
+      updates.rejection_reason = reason ?? "";
     } else if (action === "promote") {
       updates.status = "promoted";
     }
     const { error } = await supabase.from("cupid_feedback").update(updates).eq("id", id);
     if (!error) {
       setRows((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
+        prev.map((r) => (r.id === id ? { ...r, ...updates } as FeedbackRow : r))
       );
     }
-  }
-
-  async function handleRejectConfirm(reason: string) {
-    if (!rejectTarget) return;
-    const { error } = await supabase
-      .from("cupid_feedback")
-      .update({ status: "rejected", rejection_reason: reason })
-      .eq("id", rejectTarget);
-    if (!error) {
-      const id = rejectTarget;
-      setRows((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: "rejected" } : r))
-      );
-    }
-    setRejectTarget(null);
   }
 
   return (
-    <div className="flex gap-4 min-h-screen">
+    <div className="flex gap-4">
       {/* Filters sidebar */}
       <aside className="hidden md:block w-44 shrink-0">
         <div className="sticky top-4 space-y-4">
@@ -321,10 +358,10 @@ export default function CupidInbox() {
             label="Platform"
             options={[
               { label: "All", value: "all" },
-              { label: "Grab", value: "Grab" },
-              { label: "LINE MAN", value: "LINE MAN" },
-              { label: "Shopee", value: "Shopee" },
-              { label: "Walk-in", value: "Walk-in" },
+              { label: "Grab Food", value: "grab" },
+              { label: "LINE MAN", value: "lineman" },
+              { label: "Shopee Food", value: "shopee" },
+              { label: "Walk-in", value: "walkin" },
             ]}
             value={platform}
             onChange={(v) => setPlatform(v as Platform)}
@@ -355,17 +392,33 @@ export default function CupidInbox() {
           <MobileSelect
             value={mood}
             onChange={(v) => setMood(v as Mood)}
-            options={["all", "happy", "neutral", "problem"]}
+            options={[
+              { value: "all", label: "All mood" },
+              { value: "happy", label: "😄 Happy" },
+              { value: "neutral", label: "😐 Neutral" },
+              { value: "problem", label: "😟 Problem" },
+            ]}
           />
           <MobileSelect
             value={statusFilter}
             onChange={(v) => setStatusFilter(v as StatusFilter)}
-            options={["all", "pending", "resolved", "rejected", "promoted"]}
+            options={[
+              { value: "all", label: "All status" },
+              { value: "pending", label: "Pending" },
+              { value: "resolved", label: "Resolved" },
+              { value: "rejected", label: "Rejected" },
+              { value: "promoted", label: "Promoted" },
+            ]}
           />
           <MobileSelect
             value={dateFilter}
             onChange={(v) => setDateFilter(v as DateFilter)}
-            options={["all", "today", "week", "month"]}
+            options={[
+              { value: "all", label: "All time" },
+              { value: "today", label: "Today" },
+              { value: "week", label: "This week" },
+              { value: "month", label: "This month" },
+            ]}
           />
         </div>
 
@@ -383,13 +436,8 @@ export default function CupidInbox() {
               <FeedbackCard key={row.id} row={row} onAction={handleAction} />
             ))}
             {hasMore && (
-              <div className="flex justify-center pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadMore}
-                  disabled={loading}
-                >
+              <div className="flex justify-center pt-2 pb-6">
+                <Button variant="outline" size="sm" onClick={loadMore} disabled={loading}>
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
@@ -402,17 +450,11 @@ export default function CupidInbox() {
           </>
         )}
       </div>
-
-      {/* Reject modal */}
-      {rejectTarget && (
-        <RejectModal
-          onConfirm={handleRejectConfirm}
-          onCancel={() => setRejectTarget(null)}
-        />
-      )}
     </div>
   );
 }
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function FilterGroup({
   label,
@@ -455,7 +497,7 @@ function MobileSelect({
   onChange,
 }: {
   value: string;
-  options: string[];
+  options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }) {
   return (
@@ -465,8 +507,8 @@ function MobileSelect({
       className="text-xs border border-border rounded-lg px-2 py-1 bg-background"
     >
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
+        <option key={o.value} value={o.value}>
+          {o.label}
         </option>
       ))}
     </select>

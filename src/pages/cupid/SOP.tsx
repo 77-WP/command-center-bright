@@ -153,8 +153,11 @@ export default function CupidSOP() {
     const { data } = await supabase
       .from("cupid_sop_protocols")
       .select("*")
-      .order("severity", { ascending: true });
-    const rows = (data ?? []) as SOPRow[];
+      .eq("is_active", true);
+    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    const rows = ((data ?? []) as SOPRow[]).sort(
+      (a, b) => (severityOrder[a.severity ?? "low"] ?? 4) - (severityOrder[b.severity ?? "low"] ?? 4)
+    );
     setProtocols(rows);
     if (rows.length > 0 && !selectedId) setSelectedId(rows[0].id);
     setLoading(false);
@@ -209,7 +212,9 @@ export default function CupidSOP() {
                   {SEVERITY_LABEL[p.severity ?? "medium"]}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  {p.response_time_minutes}m
+                  {p.response_time_minutes
+                    ? `⏱ โทรภายใน ${p.response_time_minutes} นาที`
+                    : "ไม่ต้องโทร"}
                 </span>
               </div>
             </button>
@@ -232,8 +237,9 @@ export default function CupidSOP() {
                       {SEVERITY_LABEL[selected.severity ?? "medium"]}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      ต้องโทรภายใน{" "}
-                      <strong>{selected.response_time_minutes ?? 30} นาที</strong>
+                      {selected.response_time_minutes
+                        ? <>⏱ ต้องโทรภายใน <strong>{selected.response_time_minutes} นาที</strong></>
+                        : "ไม่ต้องโทรลูกค้า"}
                     </span>
                   </div>
                   <h2 className="text-base font-bold">{selected.title}</h2>
@@ -278,7 +284,7 @@ export default function CupidSOP() {
                   )}
 
                   {/* Call script */}
-                  {selected.call_script && (
+                  {selected.call_script ? (
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -290,6 +296,10 @@ export default function CupidSOP() {
                         {selected.call_script}
                       </blockquote>
                     </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      ไม่ต้องโทรลูกค้า — บันทึก feedback ไว้เพื่อ R&D
+                    </p>
                   )}
                 </>
               )}
