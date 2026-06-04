@@ -46,6 +46,11 @@ import TrafficAnalytics from "@/pages/TrafficAnalytics";
 import ContentManager from "@/pages/ContentManager";
 import WebsiteControl from "@/pages/WebsiteControl";
 import NotFound from "@/pages/NotFound";
+import CupidDashboard from "@/pages/cupid/Dashboard";
+import CupidInbox from "@/pages/cupid/Inbox";
+import CupidMeunFun from "@/pages/cupid/MeunFun";
+import CupidPageSettings from "@/pages/cupid/PageSettings";
+import CupidSOP from "@/pages/cupid/SOP";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +96,11 @@ function AppRoutes() {
       <Route path="/traffic-analytics" element={<ProtectedRoute><TrafficAnalytics /></ProtectedRoute>} />
       <Route path="/content-manager" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />
       <Route path="/website-control" element={<ProtectedRoute><WebsiteControl /></ProtectedRoute>} />
+      <Route path="/cupid/dashboard" element={<ProtectedRoute><CupidDashboard /></ProtectedRoute>} />
+      <Route path="/cupid/inbox" element={<ProtectedRoute><CupidInbox /></ProtectedRoute>} />
+      <Route path="/cupid/meunfun" element={<ProtectedRoute><CupidMeunFun /></ProtectedRoute>} />
+      <Route path="/cupid/settings" element={<ProtectedRoute><CupidPageSettings /></ProtectedRoute>} />
+      <Route path="/cupid/sop" element={<ProtectedRoute><CupidSOP /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

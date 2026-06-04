@@ -10,6 +10,11 @@ import {
   Globe,
   Power,
   LogOut,
+  BarChart2,
+  Inbox,
+  Sparkles,
+  Settings2,
+  ClipboardList,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -53,6 +58,16 @@ const navGroups = [
       { title: "Upsell Control", url: "/upsell", icon: TrendingUp },
       { title: "Content & Languages", url: "/content-manager", icon: Globe },
       { title: "Website Control", url: "/website-control", icon: Power },
+    ],
+  },
+  {
+    label: "Cupid",
+    items: [
+      { title: "Dashboard", url: "/cupid/dashboard", icon: BarChart2 },
+      { title: "Feedback Inbox", url: "/cupid/inbox", icon: Inbox },
+      { title: "เหมือนฝัน Manager", url: "/cupid/meunfun", icon: Sparkles },
+      { title: "Page Settings", url: "/cupid/settings", icon: Settings2 },
+      { title: "SOP Protocol", url: "/cupid/sop", icon: ClipboardList },
     ],
   },
 ];
