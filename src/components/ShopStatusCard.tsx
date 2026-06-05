@@ -19,9 +19,11 @@ interface ShopStatus {
 const PRESETS = [15, 20, 30, 45];
 
 export function ShopStatusCard() {
+  // savedStatus: always reflects what's in Supabase — used for the header pill
   const [status, setStatus] = useState<ShopStatus | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
-  const [busyMinutes, setBusyMinutes] = useState(15);
+  // editIsBusy / editBusyMinutes: local editing state inside the popover only
+  const [editIsBusy, setEditIsBusy] = useState(false);
+  const [editBusyMinutes, setEditBusyMinutes] = useState(15);
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -33,9 +35,8 @@ export function ShopStatusCard() {
       .limit(1)
       .maybeSingle();
     if (data) {
+      // Only update saved state — never touch editing state here
       setStatus(data as ShopStatus);
-      setIsBusy((data as ShopStatus).is_busy);
-      setBusyMinutes((data as ShopStatus).busy_minutes ?? 15);
     }
   }, []);
 
@@ -62,8 +63,8 @@ export function ShopStatusCard() {
     const { error } = await supabase
       .from("shop_status")
       .update({
-        is_busy: isBusy,
-        busy_minutes: isBusy ? busyMinutes : 0,
+        is_busy: editIsBusy,
+        busy_minutes: editIsBusy ? editBusyMinutes : 0,
         updated_at: new Date().toISOString(),
       })
       .eq("id", status.id);
@@ -71,7 +72,7 @@ export function ShopStatusCard() {
     if (error) {
       toast.error("บันทึกไม่สำเร็จ");
     } else {
-      toast.success(isBusy ? `ร้านยุ่ง +${busyMinutes} นาที` : "ร้านกลับสู่ปกติ");
+      toast.success(editIsBusy ? `ร้านยุ่ง +${editBusyMinutes} นาที` : "ร้านกลับสู่ปกติ");
       setOpen(false);
     }
   };
@@ -86,8 +87,17 @@ export function ShopStatusCard() {
   const currentIsBusy = status?.is_busy ?? false;
   const currentMinutes = status?.busy_minutes ?? 0;
 
+  const handleOpenChange = (next: boolean) => {
+    if (next && status) {
+      // Sync editing state from saved state whenever popover opens
+      setEditIsBusy(status.is_busy);
+      setEditBusyMinutes(status.busy_minutes > 0 ? status.busy_minutes : 15);
+    }
+    setOpen(next);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors focus:outline-none ${
@@ -107,7 +117,7 @@ export function ShopStatusCard() {
       <PopoverContent className="w-72 p-0 shadow-lg" align="end">
         <div
           className={`p-4 rounded-t-lg ${
-            isBusy
+            editIsBusy
               ? "bg-amber-50 border-b border-amber-200"
               : "bg-green-50 border-b border-green-200"
           }`}
@@ -122,9 +132,9 @@ export function ShopStatusCard() {
           {/* Toggle */}
           <div className="flex gap-2">
             <button
-              onClick={() => setIsBusy(false)}
+              onClick={() => setEditIsBusy(false)}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                !isBusy
+                !editIsBusy
                   ? "bg-green-500 text-white border-green-500"
                   : "bg-white text-muted-foreground border-border hover:bg-muted"
               }`}
@@ -133,11 +143,11 @@ export function ShopStatusCard() {
             </button>
             <button
               onClick={() => {
-                setIsBusy(true);
-                if (busyMinutes === 0) setBusyMinutes(15);
+                setEditIsBusy(true);
+                if (editBusyMinutes === 0) setEditBusyMinutes(15);
               }}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                isBusy
+                editIsBusy
                   ? "bg-amber-400 text-white border-amber-400"
                   : "bg-white text-muted-foreground border-border hover:bg-muted"
               }`}
@@ -147,7 +157,7 @@ export function ShopStatusCard() {
           </div>
 
           {/* Busy minutes controls */}
-          {isBusy && (
+          {editIsBusy && (
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-2">เวลารอเพิ่มเติม (นาที)</p>
@@ -155,9 +165,9 @@ export function ShopStatusCard() {
                   {PRESETS.map((m) => (
                     <button
                       key={m}
-                      onClick={() => setBusyMinutes(m)}
+                      onClick={() => setEditBusyMinutes(m)}
                       className={`flex-1 py-1.5 rounded text-xs font-semibold border transition-colors ${
-                        busyMinutes === m
+                        editBusyMinutes === m
                           ? "bg-amber-400 text-white border-amber-400"
                           : "bg-white text-muted-foreground border-border hover:bg-amber-50"
                       }`}
@@ -171,8 +181,8 @@ export function ShopStatusCard() {
                 type="number"
                 min={1}
                 max={120}
-                value={busyMinutes}
-                onChange={(e) => setBusyMinutes(Number(e.target.value))}
+                value={editBusyMinutes}
+                onChange={(e) => setEditBusyMinutes(Number(e.target.value))}
                 className="h-8 text-sm text-center"
               />
             </div>
@@ -182,7 +192,7 @@ export function ShopStatusCard() {
             onClick={handleSave}
             disabled={saving}
             className={`w-full font-semibold ${
-              isBusy
+              editIsBusy
                 ? "bg-amber-500 hover:bg-amber-600 text-white"
                 : "bg-green-500 hover:bg-green-600 text-white"
             }`}
