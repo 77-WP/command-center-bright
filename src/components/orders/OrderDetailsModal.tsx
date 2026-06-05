@@ -457,12 +457,12 @@ export function OrderDetailsModal({
             )}
           </div>
 
-          {/* Cutlery & Condiments — scanned from items selections */}
+          {/* Cutlery & Condiments — scanned from items selections + internal_notes */}
           {(() => {
             const CUTLERY_OPTION_ID = "38aeb0d8-efd2-4ddd-a2a8-0dbac912fe2b";
             const CONDIMENT_OPTION_ID = "a7f7a77d-1012-400f-b57d-e222992d11a4";
-            let wantsCutlery = false;
-            let wantsCondiment = false;
+            let wantsCutlery = order.internal_notes?.includes("ช้อนส้อม: รับ") ?? false;
+            let wantsCondiment = order.internal_notes?.includes("พริกน้ำปลา: รับ") ?? false;
             for (const item of items) {
               // New format: selections map
               if (item.selections) {
@@ -480,17 +480,20 @@ export function OrderDetailsModal({
             }
             if (!wantsCutlery && !wantsCondiment) return null;
             return (
-              <div className="flex flex-wrap gap-2">
-                {wantsCutlery && (
-                  <Badge className="bg-green-600 hover:bg-green-600 text-white border-0 text-sm py-1 px-3">
-                    🥄 ช้อนส้อม
-                  </Badge>
-                )}
-                {wantsCondiment && (
-                  <Badge className="bg-green-600 hover:bg-green-600 text-white border-0 text-sm py-1 px-3">
-                    🌶 พริกน้ำปลา
-                  </Badge>
-                )}
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">อุปกรณ์และเครื่องปรุง</p>
+                <div className="flex flex-wrap gap-2">
+                  {wantsCutlery && (
+                    <Badge className="bg-green-600 hover:bg-green-600 text-white border-0 text-sm py-1 px-3">
+                      🥄 ช้อนส้อม
+                    </Badge>
+                  )}
+                  {wantsCondiment && (
+                    <Badge className="bg-green-600 hover:bg-green-600 text-white border-0 text-sm py-1 px-3">
+                      🌶 พริกน้ำปลา
+                    </Badge>
+                  )}
+                </div>
               </div>
             );
           })()}
