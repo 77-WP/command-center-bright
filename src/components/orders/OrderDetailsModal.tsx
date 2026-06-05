@@ -309,6 +309,16 @@ export function OrderDetailsModal({
     return { timeStr, urgent };
   })();
 
+  // Car details for tocar orders
+  const carDetails =
+    order.fulfillment_type === "tocar" || order.fulfillment_type === "to_car"
+      ? order.internal_notes
+          ?.split("|")
+          .find((p) => p.trim().startsWith("รถ:"))
+          ?.replace("รถ:", "")
+          .trim() || null
+      : null;
+
   // Customer info
   const parsedNotes = parseInternalNotes(order.internal_notes);
   const customerName = order.customers?.nickname || parsedNotes.name || null;
@@ -333,6 +343,14 @@ export function OrderDetailsModal({
             <FulfillmentBadge type={order.fulfillment_type} />
             {order.source && <Badge variant="outline">{order.source}</Badge>}
           </div>
+
+          {/* 1.5 Car details — tocar orders */}
+          {carDetails && (
+            <div className="rounded-lg px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 flex items-center gap-3">
+              <span className="text-xl font-bold">🚗</span>
+              <span className="text-base font-bold text-amber-900 dark:text-amber-200">{carDetails}</span>
+            </div>
+          )}
 
           {/* 2. Pickup time — prominent */}
           <div
@@ -508,19 +526,19 @@ export function OrderDetailsModal({
                 <span>฿{Number(order.subtotal).toLocaleString()}</span>
               </div>
             )}
-            {order.discount_amount && Number(order.discount_amount) > 0 && (
+            {order.discount_amount != null && Number(order.discount_amount) > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Discount</span>
                 <span className="text-destructive">-฿{Number(order.discount_amount).toLocaleString()}</span>
               </div>
             )}
-            {order.delivery_fee && Number(order.delivery_fee) > 0 && (
+            {order.delivery_fee != null && Number(order.delivery_fee) > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery Fee</span>
                 <span>฿{Number(order.delivery_fee).toLocaleString()}</span>
               </div>
             )}
-            {order.platform_fee && Number(order.platform_fee) > 0 && (
+            {order.platform_fee != null && Number(order.platform_fee) > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Platform Fee</span>
                 <span>฿{Number(order.platform_fee).toLocaleString()}</span>

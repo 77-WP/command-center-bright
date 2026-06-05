@@ -63,18 +63,42 @@ function getDateRange(preset: Preset, customFrom?: Date, customTo?: Date): { fro
   }
 }
 
+interface DailyOrder {
+  grand_total: number;
+  status: string;
+  created_at: string | null;
+  items: unknown;
+}
+
 export default function SalesAnalytics() {
   const [preset, setPreset] = useState<Preset>("today");
   const [customFrom, setCustomFrom] = useState<Date>();
   const [customTo, setCustomTo] = useState<Date>();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
+  const [dailyLoading, setDailyLoading] = useState(true);
 
   const { from, to } = getDateRange(preset, customFrom, customTo);
 
   useEffect(() => {
     fetchOrders();
   }, [preset, customFrom, customTo]);
+
+  useEffect(() => {
+    const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+    const todayStart = new Date(todayStr + "T00:00:00+07:00");
+    const todayEnd = new Date(todayStr + "T23:59:59+07:00");
+    supabase
+      .from("orders")
+      .select("grand_total, status, created_at, items")
+      .gte("created_at", todayStart.toISOString())
+      .lte("created_at", todayEnd.toISOString())
+      .then(({ data }) => {
+        setDailyOrders(data ?? []);
+        setDailyLoading(false);
+      });
+  }, []);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -127,6 +151,42 @@ export default function SalesAnalytics() {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([label, revenue]) => ({ label, revenue: Math.round(revenue) }));
   }, [orders, preset, customFrom, customTo]);
+
+  // Daily summary metrics
+  const dailySummary = useMemo(() => {
+    const orderCount = dailyOrders.length;
+    const totalRevenue = dailyOrders
+      .filter((o) => o.status !== "cancelled")
+      .reduce((s, o) => s + o.grand_total, 0);
+
+    const itemCounts: Record<string, number> = {};
+    for (const order of dailyOrders) {
+      try {
+        const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
+        if (Array.isArray(items)) {
+          for (const item of items as { name_th?: string; name_en?: string; quantity?: number }[]) {
+            const name = item.name_th || item.name_en || "Unknown";
+            itemCounts[name] = (itemCounts[name] || 0) + (item.quantity || 1);
+          }
+        }
+      } catch {}
+    }
+    const topItem = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+
+    const hourCounts: Record<number, number> = {};
+    for (const order of dailyOrders) {
+      if (order.created_at) {
+        const h = new Date(
+          new Date(order.created_at).toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+        ).getHours();
+        hourCounts[h] = (hourCounts[h] || 0) + 1;
+      }
+    }
+    const busiestEntry = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const busiestHour = busiestEntry ? `${busiestEntry[0]}:00–${Number(busiestEntry[0]) + 1}:00` : "—";
+
+    return { orderCount, totalRevenue, topItem, busiestHour };
+  }, [dailyOrders]);
 
   // Sales by source
   const sourceChartData = useMemo(() => {
@@ -190,6 +250,35 @@ export default function SalesAnalytics() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Daily Summary */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h2 className="text-sm font-semibold text-foreground mb-4">สรุปวันนี้</h2>
+        {dailyLoading ? (
+          <div className="flex items-center justify-center h-20">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-muted rounded-lg p-3 space-y-1">
+              <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">จำนวน order ทั้งหมด</p>
+              <p className="text-2xl font-bold text-foreground">{dailySummary.orderCount}</p>
+            </div>
+            <div className="bg-muted rounded-lg p-3 space-y-1">
+              <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">ยอดรวม</p>
+              <p className="text-2xl font-bold text-foreground">฿{dailySummary.totalRevenue.toLocaleString()}</p>
+            </div>
+            <div className="bg-muted rounded-lg p-3 space-y-1">
+              <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">เมนูขายดีสุด</p>
+              <p className="text-lg font-bold text-foreground truncate">{dailySummary.topItem}</p>
+            </div>
+            <div className="bg-muted rounded-lg p-3 space-y-1">
+              <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">ช่วงเวลาที่ยุ่งที่สุด</p>
+              <p className="text-lg font-bold text-foreground">{dailySummary.busiestHour}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (

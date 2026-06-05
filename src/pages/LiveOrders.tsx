@@ -241,6 +241,14 @@ export default function LiveOrders() {
     };
   }, [fetchOrders]);
 
+  // Fallback polling every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
+
   const pendingLine = orders.filter((o) => o.status === "pending_line");
   const pending = orders.filter((o) => o.status === "pending");
   const preparing = orders.filter((o) => o.status === "preparing");
