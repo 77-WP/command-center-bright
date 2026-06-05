@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { NotificationButton } from "@/components/NotificationButton";
+import { ShopStatusCard } from "@/components/ShopStatusCard";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,7 +13,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-12 flex items-center justify-between border-b border-border px-4 bg-card">
             <SidebarTrigger className="hidden md:flex" />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <ShopStatusCard />
               <NotificationButton />
             </div>
           </header>
